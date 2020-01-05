@@ -21,7 +21,10 @@ import net.java.sezpoz.Index
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.result.DependencyResult
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.attributes.Category
 import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPluginConvention
 import org.jenkinsci.gradle.plugins.jpi.internal.VersionCalculator
@@ -40,6 +43,8 @@ import static org.jenkinsci.gradle.plugins.jpi.JpiPlugin.PLUGINS_DEPENDENCY_CONF
  * @author Kohsuke Kawaguchi
  */
 class JpiManifest extends Manifest {
+    private static final CATEGORY_ATTRIBUTE = Attribute.of(Category.CATEGORY_ATTRIBUTE.name, String)
+
     JpiManifest(Project project) {
         def conv = project.extensions.getByType(JpiExtension)
         def javaPluginConvention = project.convention.getPlugin(JavaPluginConvention)
@@ -141,13 +146,26 @@ class JpiManifest extends Manifest {
     }
 
     private static listUpDependencies(Configuration c, boolean optional, StringBuilder buf) {
-        for (Dependency d : c.dependencies) {
+        c.incoming.resolutionResult.root.dependencies.each { DependencyResult result ->
+            if (result.constraint || !(result instanceof ResolvedDependencyResult)) {
+                return
+            }
+            def selected = ((ResolvedDependencyResult) result).selected
+            // TODO: Find a better way to exclude platform dependencies
+            if (selected.variants.size() == 1 &&
+                    selected.variants.get(0).attributes.getAttribute(CATEGORY_ATTRIBUTE) != Category.LIBRARY) {
+                return
+            }
+            def moduleVersion = selected.moduleVersion
+            if (moduleVersion == null) {
+                return
+            }
             if (buf.length() > 0) {
                 buf.append(',')
             }
-            buf.append(d.name)
+            buf.append(moduleVersion.name)
             buf.append(':')
-            buf.append(d.version)
+            buf.append(moduleVersion.version)
             if (optional) {
                 buf.append(';resolution:=optional')
             }
