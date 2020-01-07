@@ -22,8 +22,13 @@ import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
+import org.gradle.api.artifacts.result.DependencyResult
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.attributes.Attribute
+import org.gradle.api.attributes.Category
 import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPluginConvention
+import org.gradle.util.GradleVersion
 import org.jenkinsci.gradle.plugins.jpi.internal.VersionCalculator
 
 import java.util.jar.Attributes
@@ -141,6 +146,44 @@ class JpiManifest extends Manifest {
     }
 
     private static listUpDependencies(Configuration c, boolean optional, StringBuilder buf) {
+        // The category attribute has been introduced in Gradle '5.3'
+        if (GradleVersion.current() >= GradleVersion.version('5.3')) {
+            listUpResolvedDependencies(c, optional, buf)
+        } else {
+            legacyListUpDependencies(c, optional, buf)
+        }
+    }
+
+    private static listUpResolvedDependencies(Configuration c, boolean optional, StringBuilder buf) {
+        def categoryAttribute = Attribute.of(Category.CATEGORY_ATTRIBUTE.name, String)
+
+        c.incoming.resolutionResult.root.dependencies.each { DependencyResult result ->
+            if (result.constraint || !(result instanceof ResolvedDependencyResult)) {
+                return
+            }
+            def selected = ((ResolvedDependencyResult) result).selected
+            // TODO: Find a better way to exclude platform dependencies
+            if (selected.variants.size() == 1 &&
+                    selected.variants.get(0).attributes.getAttribute(categoryAttribute) != Category.LIBRARY) {
+                return
+            }
+            def moduleVersion = selected.moduleVersion
+            if (moduleVersion == null) {
+                return
+            }
+            if (buf.length() > 0) {
+                buf.append(',')
+            }
+            buf.append(moduleVersion.name)
+            buf.append(':')
+            buf.append(moduleVersion.version)
+            if (optional) {
+                buf.append(';resolution:=optional')
+            }
+        }
+    }
+
+    private static legacyListUpDependencies(Configuration c, boolean optional, StringBuilder buf) {
         for (Dependency d : c.dependencies) {
             if (buf.length() > 0) {
                 buf.append(',')

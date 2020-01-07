@@ -2,6 +2,7 @@ package org.jenkinsci.gradle.plugins.jpi
 
 import groovy.transform.CompileStatic
 import org.gradle.testkit.runner.GradleRunner
+import org.gradle.util.GradleVersion
 import org.junit.Rule
 import org.junit.experimental.categories.Category
 import org.junit.rules.TemporaryFolder
@@ -17,9 +18,14 @@ class IntegrationSpec extends Specification {
         def runner = GradleRunner.create()
                 .withPluginClasspath()
                 .withProjectDir(projectDir.root)
-        if (System.getProperty('gradle.under.test')) {
-            return runner.withGradleVersion(System.getProperty('gradle.under.test'))
+        def gradleVersion = gradleVersionForTest
+        if (gradleVersion != GradleVersion.current()) {
+            return runner.withGradleVersion(gradleVersion.version)
         }
         runner
+    }
+
+    static GradleVersion getGradleVersionForTest() {
+        System.getProperty('gradle.under.test')?.with { GradleVersion.version(delegate) } ?: GradleVersion.current()
     }
 }

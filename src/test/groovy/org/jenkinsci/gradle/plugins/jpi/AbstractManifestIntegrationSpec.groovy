@@ -3,6 +3,8 @@ package org.jenkinsci.gradle.plugins.jpi
 import groovy.transform.CompileStatic
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
+import org.gradle.util.GradleVersion
+import spock.lang.Requires
 import spock.lang.Unroll
 
 import java.util.jar.JarInputStream
@@ -287,6 +289,34 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
                 'ant:1.2,' +
                 'cloudbees-folder:4.2;resolution:=optional,' +
                 'credentials:1.9.4;resolution:=optional'
+    }
+
+    @Requires({ IntegrationSpec.gradleVersionForTest >= GradleVersion.version('5.3') })
+    def 'can use bom to manage plugin dependencies'() {
+        given:
+        build << """\
+            configurations {
+                jenkinsBom
+                compileClasspath.extendsFrom(jenkinsBom)
+                runtimeClasspath.extendsFrom(jenkinsBom)
+                jenkinsPlugins.extendsFrom(jenkinsBom)
+                optionalJenkinsPlugins.extendsFrom(jenkinsBom)
+                jenkinsServer.extendsFrom(jenkinsBom)
+                jenkinsWar.extendsFrom(jenkinsBom)
+                jenkinsTest.extendsFrom(jenkinsBom)
+                pluginResources.extendsFrom(jenkinsBom)
+            }
+            dependencies {
+                jenkinsBom platform("io.jenkins.tools.bom:bom-2.138.x:4")
+                jenkinsPlugins 'org.jenkins-ci.plugins.workflow:workflow-api'
+            }
+        """
+
+        when:
+        def actual = generateManifestThroughGradle()
+
+        then:
+        actual['Plugin-Dependencies'] == 'workflow-api:2.37'
     }
 
     def 'should populate Plugin-Developers with sole developer'() {
