@@ -3,12 +3,9 @@ package org.jenkinsci.gradle.plugins.jpi
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.XmlProvider
-import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.DependencySet
-import org.gradle.api.artifacts.ModuleDependency
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
-import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.Property
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPomDeveloper
@@ -20,8 +17,6 @@ import org.gradle.api.publish.maven.MavenPomScm
 import static org.gradle.api.artifacts.ArtifactRepositoryContainer.DEFAULT_MAVEN_CENTRAL_REPO_NAME
 import static org.gradle.api.artifacts.ArtifactRepositoryContainer.DEFAULT_MAVEN_LOCAL_REPO_NAME
 import static org.jenkinsci.gradle.plugins.jpi.JpiPlugin.CORE_DEPENDENCY_CONFIGURATION_NAME
-import static org.jenkinsci.gradle.plugins.jpi.JpiPlugin.OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME
-import static org.jenkinsci.gradle.plugins.jpi.JpiPlugin.PLUGINS_DEPENDENCY_CONFIGURATION_NAME
 
 /**
  * Adds metadata to the JPI's POM.
@@ -103,67 +98,15 @@ class JpiPomCustomizer {
         if (repositories) {
             pom.appendNode('repositories', repositories.collect { makeRepositoryNode(it) })
         }
-        fixDependencies(pom)
+        // TODO Can this be removed? 'provided' dependencies are not of for poms that are metadata (they are only for local project poms in Maven)
+        addProvidedDependencies(pom)
     }
 
-    private void fixDependencies(Node pom) {
-        DependencySet pluginDependencies = project.configurations.
-                getByName(PLUGINS_DEPENDENCY_CONFIGURATION_NAME).dependencies
-        DependencySet optionalPluginDependencies = project.configurations.
-                getByName(OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME).dependencies
+    private void addProvidedDependencies(Node pom) {
         DependencySet coreDependencies = project.configurations.
                 getByName(CORE_DEPENDENCY_CONFIGURATION_NAME).dependencies
-        DependencySet compileDependencies = project.configurations.
-                getByName(JavaPlugin.COMPILE_CONFIGURATION_NAME).dependencies
-        Set<Dependency> allPluginDependencies = pluginDependencies + optionalPluginDependencies
-
         Node dependenciesNode = pom.dependencies[0] as Node
         dependenciesNode = dependenciesNode ?: pom.appendNode('dependencies')
-        (compileDependencies - coreDependencies + pluginDependencies + optionalPluginDependencies).each {
-            ModuleVersionIdentifier mvid = ResolvedDependencySelector.selectedModuleVersion(
-                    project,
-                    'compile',
-                    it.group,
-                    it.name)
-            Node dependency = dependenciesNode.appendNode('dependency')
-            dependency.appendNode('groupId', it.group)
-            dependency.appendNode('artifactId', it.name)
-            dependency.appendNode('version', mvid.version ?: it.version)
-        }
-        dependenciesNode.each { Node dependency ->
-            String groupId = dependency.groupId.text()
-            String artifactId = dependency.artifactId.text()
-            Node scope = dependency.scope[0] as Node
-            Node exclusions = dependency.exclusions[0] as Node
-
-            // add the optional element for all optional plugin dependencies
-            if (optionalPluginDependencies.any { it.group == groupId && it.name == artifactId }) {
-                dependency.appendNode('optional', true)
-            }
-
-            // remove the scope for all plugin and compile dependencies
-            if (scope && (allPluginDependencies + compileDependencies).any {
-                it.group == groupId && it.name == artifactId
-            }) {
-                dependency.remove(scope)
-            }
-
-            // remove exclusions from all plugin dependencies
-            if (exclusions && allPluginDependencies.any { it.group == groupId && it.name == artifactId }) {
-                dependency.remove(exclusions)
-            }
-
-            compileDependencies.withType(ModuleDependency).find {
-                it.group == groupId && it.name == artifactId && it.excludeRules
-            }.each {
-                exclusions = dependency.appendNode('exclusions')
-                it.excludeRules.each {
-                    Node exclusion = exclusions.appendNode('exclusion')
-                    exclusion.appendNode('groupId', it.group)
-                    exclusion.appendNode('artifactId', it.module)
-                }
-            }
-        }
 
         coreDependencies.each {
             Node dependency = dependenciesNode.appendNode('dependency')

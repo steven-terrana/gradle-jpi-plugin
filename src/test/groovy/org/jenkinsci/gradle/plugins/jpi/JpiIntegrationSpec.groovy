@@ -162,9 +162,8 @@ class JpiIntegrationSpec extends IntegrationSpec {
         where:
         task                                         | dependency                                    | outcome
         'jar'                                        | ':configureManifest'                          | TaskOutcome.SUCCESS
-        'war'                                        | ':configureManifest'                          | TaskOutcome.SUCCESS
+        'jpi'                                        | ':configureManifest'                          | TaskOutcome.SUCCESS
         'processTestResources'                       | ':resolveTestDependencies'                    | TaskOutcome.NO_SOURCE
-        'jpi'                                        | ':war'                                        | TaskOutcome.SUCCESS
         'compileTestJava'                            | ':insertTest'                                 | TaskOutcome.SKIPPED
         'testClasses'                                | ':generate-test-hpl'                          | TaskOutcome.SUCCESS
         'compileJava'                                | ':localizer'                                  | TaskOutcome.SUCCESS

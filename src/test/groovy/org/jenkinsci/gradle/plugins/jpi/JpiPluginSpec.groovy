@@ -90,11 +90,6 @@ class JpiPluginSpec extends Specification {
         (project as ProjectInternal).evaluate()
 
         then:
-        Task warTask = project.tasks[WarPlugin.WAR_TASK_NAME]
-        warTask != null
-        warTask.description != null
-        warTask.group == BasePlugin.BUILD_GROUP
-
         Task jpiTask = project.tasks[JpiPlugin.JPI_TASK_NAME]
         jpiTask != null
         jpiTask.description != null

@@ -227,8 +227,13 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
             jenkinsPlugin {
                 coreVersion = '1.580.1'
             }
+            java {
+                registerFeature('credentials') {
+                    usingSourceSet(sourceSets.main)
+                }
+            }
             dependencies {
-                optionalJenkinsPlugins 'org.jenkins-ci.plugins:credentials:1.9.4'
+                credentialsImplementation 'org.jenkins-ci.plugins:credentials:1.9.4'
             }
             """.stripIndent()
 
@@ -328,7 +333,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
     void generatePom() {
         gradleRunner()
-        .withArguments('generatePomFileForMavenJpiPublication')
+        .withArguments('generatePomFileForMavenJpiPublication', '-s')
                 .build()
     }
 
