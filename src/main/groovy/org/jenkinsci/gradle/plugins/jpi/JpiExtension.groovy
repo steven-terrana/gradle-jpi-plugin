@@ -163,27 +163,29 @@ class JpiExtension {
 
         if (this.coreVersion) {
             project.dependencies {
+                def jenkinsWar = [group: 'org.jenkins-ci.main', name: 'jenkins-war', version: v]
+
                 if (GradleVersion.current() >= GradleVersion.version('4.6')) {
                     annotationProcessor "org.jenkins-ci.main:jenkins-core:$v"
                 }
-                jenkinsCore(
+                compileOnly(
                         [group: 'org.jenkins-ci.main', name: 'jenkins-core', version: v],
                         [group: findBugsGroup, name: 'annotations', version: findBugsVersion],
                         [group: 'javax.servlet', name: servletApiArtifact, version: servletApiVersion],
                 )
 
-                jenkinsWar(group: 'org.jenkins-ci.main', name: 'jenkins-war', version: v)
+                compileOnly(jenkinsWar)
 
                 if (new VersionNumber(this.coreVersion) < new VersionNumber('2.64')) {
-                    jenkinsTest("org.jenkins-ci.main:jenkins-war:${v}:war-for-test")
+                    testImplementation("org.jenkins-ci.main:jenkins-war:${v}:war-for-test")
                 } else {
-                    project.configurations.jenkinsTest.extendsFrom(project.configurations.jenkinsWar)
+                    testImplementation(jenkinsWar)
                 }
 
-                jenkinsTest("org.jenkins-ci.main:jenkins-test-harness:${testHarnessVersion}")
-                jenkinsTest("org.jenkins-ci.main:ui-samples-plugin:${uiSamplesVersion}")
+                testImplementation("org.jenkins-ci.main:jenkins-test-harness:${testHarnessVersion}")
+                testImplementation("org.jenkins-ci.main:ui-samples-plugin:${uiSamplesVersion}")
                 if (new VersionNumber(this.coreVersion) < new VersionNumber('1.505')) {
-                    jenkinsTest('junit:junit-dep:4.10')
+                    testImplementation('junit:junit-dep:4.10')
                 }
             }
         }

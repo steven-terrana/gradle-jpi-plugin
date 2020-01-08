@@ -19,9 +19,12 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.ConfigurationContainer
-import org.gradle.api.artifacts.Dependency
-import org.gradle.api.artifacts.ResolvedArtifact
+import org.gradle.api.attributes.Bundling
+import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.LibraryElements
+import org.gradle.api.attributes.Usage
+import org.gradle.api.attributes.java.TargetJvmVersion
+import org.gradle.api.component.AdhocComponentWithVariants
 import org.gradle.api.execution.TaskExecutionGraph
 import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.plugins.JavaLibraryPlugin
@@ -32,7 +35,6 @@ import org.gradle.api.plugins.GroovyPlugin
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
-import org.gradle.api.publish.tasks.GenerateModuleMetadata
 import org.gradle.api.tasks.SourceSet
 import org.gradle.api.tasks.TaskProvider
 import org.gradle.api.tasks.bundling.Jar
@@ -42,9 +44,6 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 
 import static org.gradle.api.logging.LogLevel.INFO
-import static org.gradle.api.plugins.JavaPlugin.API_CONFIGURATION_NAME
-import static org.gradle.api.plugins.JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME
-import static org.gradle.api.plugins.JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME
 import static org.gradle.api.tasks.SourceSet.MAIN_SOURCE_SET_NAME
 import static org.gradle.api.tasks.SourceSet.TEST_SOURCE_SET_NAME
 import static org.jenkinsci.gradle.plugins.jpi.JpiManifest.attributesToMap
@@ -57,37 +56,15 @@ import static org.jenkinsci.gradle.plugins.jpi.JpiManifest.attributesToMap
  * @author Andrew Bayer
  */
 class JpiPlugin implements Plugin<Project> {
-    /**
-     * Represents the dependency to the Jenkins core.
-     */
-    public static final String CORE_DEPENDENCY_CONFIGURATION_NAME = 'jenkinsCore'
-
-    /**
-     * Represents the dependency to the Jenkins war. Test scope.
-     */
-    public static final String WAR_DEPENDENCY_CONFIGURATION_NAME = 'jenkinsWar'
 
     /**
      * Represents the dependencies on other Jenkins plugins.
      */
     public static final String PLUGINS_DEPENDENCY_CONFIGURATION_NAME = 'jenkinsPlugins'
-
-    /**
-     * Represents the dependencies on other Jenkins plugins.
-     *
-     * Using a separate configuration until we see GRADLE-1749.
-     */
-    public static final String OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME = 'optionalJenkinsPlugins'
-
-    /**
-     * Represents the Jenkins plugin test dependencies.
-     */
-    public static final String JENKINS_TEST_DEPENDENCY_CONFIGURATION_NAME = 'jenkinsTest'
-
-    /**
-     * Represents the extra dependencies on other Jenkins plugins for the server task.
-     */
-    public static final String JENKINS_SERVER_DEPENDENCY_CONFIGURATION_NAME = 'jenkinsServer'
+    public static final String TEST_PLUGINS_DEPENDENCY_CONFIGURATION_NAME = 'testJenkinsPlugins'
+    public static final String JENKINS_RUNTIME_ELEMENTS_CONFIGURATION_NAME = 'runtimeElementsJenkins'
+    public static final String JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME = 'runtimeClasspathJenkins'
+    public static final String TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME = 'testRuntimeClasspathJenkins'
 
     public static final String JPI_TASK_NAME = 'jpi'
     public static final String LICENSE_TASK_NAME = 'generateLicenseInfo'
@@ -131,8 +108,8 @@ class JpiPlugin implements Plugin<Project> {
         }
 
         configureRepositories(gradleProject)
-        configureConfigurations(gradleProject)
         configureJpi(gradleProject)
+        configureConfigurations(gradleProject)
         configureManifest(gradleProject)
         configureLicenseInfo(gradleProject)
         configureTestDependencies(gradleProject)
@@ -196,24 +173,10 @@ class JpiPlugin implements Plugin<Project> {
 
     private static configureTestDependencies(Project project) {
         JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
-        Configuration plugins = project.configurations.create('pluginResources')
-        plugins.visible = false
-
-        project.afterEvaluate {
-            [
-                    PLUGINS_DEPENDENCY_CONFIGURATION_NAME,
-                    OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME,
-                    JENKINS_SERVER_DEPENDENCY_CONFIGURATION_NAME,
-                    JENKINS_TEST_DEPENDENCY_CONFIGURATION_NAME,
-            ].each {
-                project.configurations.getByName(it).dependencies.each {
-                    project.dependencies.add(plugins.name, "${it.group}:${it.name}:${it.version}")
-                }
-            }
-        }
 
         def testDependenciesTask = project.tasks.register(TestDependenciesTask.TASK_NAME, TestDependenciesTask) {
-            it.configuration = plugins
+            it.configuration = project.configurations.named(TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME)
+                    .get().incoming.artifactView { it.lenient(true) }.files
         }
 
         project.tasks.named(javaConvention.sourceSets.test.processResourcesTaskName).configure {
@@ -250,7 +213,7 @@ class JpiPlugin implements Plugin<Project> {
                     project.configurations[javaConvention.sourceSets.main.runtimeClasspathConfigurationName]
             ]
             it.providedConfigurations = [
-                    project.configurations[COMPILE_ONLY_CONFIGURATION_NAME]
+                    project.configurations[javaConvention.sourceSets.main.compileOnlyConfigurationName]
             ]
         }
 
@@ -297,49 +260,102 @@ class JpiPlugin implements Plugin<Project> {
     }
 
     private static configureConfigurations(Project project) {
-        Configuration core = project.configurations.create(CORE_DEPENDENCY_CONFIGURATION_NAME)
-        core.visible = false
-        core.description = 'Jenkins core that your plugin is built against'
+        project.dependencies.components.all(JpiVariantRule)
 
-        Configuration plugins = project.configurations.create(PLUGINS_DEPENDENCY_CONFIGURATION_NAME)
-        plugins.visible = false
-        plugins.description = 'Jenkins plugins which your plugin is built against'
+        JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
+        AdhocComponentWithVariants component = project.components.java
 
-        Configuration optionalPlugins = project.configurations.create(OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME)
-        optionalPlugins.visible = false
-        optionalPlugins.description = 'Optional Jenkins plugins dependencies which your plugin is built against'
+        Configuration testPlugins = project.configurations.create(TEST_PLUGINS_DEPENDENCY_CONFIGURATION_NAME)
+        testPlugins.visible = false
+        testPlugins.canBeConsumed = false
+        testPlugins.canBeResolved = false
+        project.configurations.named(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).get().extendsFrom(testPlugins)
 
-        Configuration serverPlugins = project.configurations.create(JENKINS_SERVER_DEPENDENCY_CONFIGURATION_NAME)
-        serverPlugins.visible = false
-        serverPlugins.description = 'Jenkins plugins which will be installed by the server task'
+        Configuration testRuntimeClasspathJenkins = project.configurations.create(TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME)
+        testRuntimeClasspathJenkins.visible = false
+        testRuntimeClasspathJenkins.canBeConsumed = false
+        testRuntimeClasspathJenkins.canBeResolved = true
+        testRuntimeClasspathJenkins.attributes {
+            it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
+            it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
+            it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, "jpi"))
+        }
+        testRuntimeClasspathJenkins.extendsFrom(testPlugins)
+        testRuntimeClasspathJenkins
 
-        Configuration test = project.configurations.create(JENKINS_TEST_DEPENDENCY_CONFIGURATION_NAME)
-                .exclude(group: 'org.jenkins-ci.modules', module: 'ssh-cli-auth')
-                .exclude(group: 'org.jenkins-ci.modules', module: 'sshd')
-        test.visible = false
-        test.description = 'Jenkins plugin test dependencies.'
+        project.configurations.withType(Configuration) { Configuration runtimeElements ->
+            if (isRuntimeVariant(runtimeElements)) {
+                Configuration plugins = project.configurations.create(toFeatureSpecificConfigurationName(
+                        runtimeElements, PLUGINS_DEPENDENCY_CONFIGURATION_NAME))
+                plugins.visible = false
+                plugins.canBeConsumed = false
+                plugins.canBeResolved = false
+                plugins.description = 'Jenkins plugins which your plugin is built against'
+                project.configurations.named(toFeatureSpecificConfigurationName(
+                        runtimeElements, JavaPlugin.API_CONFIGURATION_NAME)).get().extendsFrom(plugins)
 
-        project.configurations.getByName(COMPILE_ONLY_CONFIGURATION_NAME).extendsFrom(core)
-        project.configurations.getByName(COMPILE_ONLY_CONFIGURATION_NAME).extendsFrom(plugins)
-        project.configurations.getByName(COMPILE_ONLY_CONFIGURATION_NAME).extendsFrom(optionalPlugins)
-        project.configurations.getByName(TEST_IMPLEMENTATION_CONFIGURATION_NAME).extendsFrom(test)
+                Configuration runtimeElementsJenkins = project.configurations.create(toFeatureSpecificConfigurationName(
+                        runtimeElements, JENKINS_RUNTIME_ELEMENTS_CONFIGURATION_NAME))
+                runtimeElementsJenkins.canBeResolved = false
+                runtimeElementsJenkins.canBeConsumed = true
+                runtimeElementsJenkins.extendsFrom(runtimeElements)
+                runtimeElementsJenkins.outgoing.artifact(project.tasks.named(JPI_TASK_NAME))
+                runtimeElementsJenkins.attributes {
+                    it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
+                    it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
+                    it.attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling, Bundling.EXTERNAL))
+                    it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, "jpi"))
+                    it.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, javaConvention.targetCompatibility.majorVersion.toInteger())
+                }
+                runtimeElementsJenkins.outgoing.capabilities.addAll(runtimeElements.outgoing.capabilities)
 
-        Configuration warDependencies = project.configurations.create(WAR_DEPENDENCY_CONFIGURATION_NAME)
-        warDependencies.visible = false
-        warDependencies.description = 'Jenkins war that corresponds to the Jenkins core'
+                Configuration runtimeClasspathJenkins = project.configurations.create(toFeatureSpecificConfigurationName(
+                        runtimeElements, JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME))
+                runtimeClasspathJenkins.canBeResolved = true
+                runtimeClasspathJenkins.canBeConsumed = false
+                runtimeClasspathJenkins.extendsFrom(plugins)
+                runtimeClasspathJenkins.attributes {
+                    it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
+                    it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
+                    it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, "jpi"))
+                }
 
-        resolvePluginDependencies(project)
+                component.addVariantsFromConfiguration(runtimeElementsJenkins) {
+                    if (runtimeElements.name != JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME) {
+                        it.mapToOptional()
+                    }
+                }
+
+                testRuntimeClasspathJenkins.extendsFrom(plugins)
+            }
+        }
+    }
+
+    private static boolean isRuntimeVariant(Configuration variant) {
+        return variant.name == "runtimeElements" || variant.name.endsWith("RuntimeElements")
+        /*return (variant.canBeConsumed
+                && variant.attributes.getAttribute(Usage.USAGE_ATTRIBUTE)?.name == Usage.JAVA_RUNTIME
+                && variant.attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)?.name == Category.LIBRARY
+                && variant.attributes.getAttribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE)?.name == LibraryElements.JAR)*/
+    }
+
+    private static String toFeatureSpecificConfigurationName(Configuration runtimeElements, String baseName) {
+        if (runtimeElements.name == JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME) {
+            // main variant
+            return baseName
+        } else {
+            // feature variant name
+            return toFeatureVariantName(runtimeElements) + baseName.capitalize()
+        }
+
+    }
+
+    private static String toFeatureVariantName(Configuration runtimeElements) {
+        runtimeElements.name.substring(0, runtimeElements.name.length()
+                - JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME.length())
     }
 
     private static configurePublishing(Project project) {
-        // Disable publication of Gradle module metadata
-        // Currently, this would produce a module metadata file which can't be consumed by downstream projects,
-        // since it doesn't contain any dependencies and only the hpi variant and not jar variant.
-        // Until this is fixed, Gradle module metadata shouldn't be published.
-        project.tasks.withType(GenerateModuleMetadata) {
-            enabled = false
-        }
-
         JpiExtension jpiExtension = project.extensions.getByType(JpiExtension)
 
         // delay configuration until all settings are available (groupId, shortName, ...)
@@ -394,42 +410,5 @@ class JpiPlugin implements Plugin<Project> {
         }
 
         project.tasks.named(JavaPlugin.TEST_CLASSES_TASK_NAME).configure { it.dependsOn(generateTestHplTask) }
-    }
-
-    private static void resolvePluginDependencies(Project project) {
-        resolvePluginDependencies(
-                project,
-                PLUGINS_DEPENDENCY_CONFIGURATION_NAME,
-                API_CONFIGURATION_NAME
-        )
-        resolvePluginDependencies(
-                project,
-                OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME,
-                API_CONFIGURATION_NAME
-        )
-        resolvePluginDependencies(
-                project,
-                JENKINS_TEST_DEPENDENCY_CONFIGURATION_NAME,
-                TEST_IMPLEMENTATION_CONFIGURATION_NAME
-        )
-    }
-
-    private static void resolvePluginDependencies(Project project, String from, String to) {
-        ConfigurationContainer configurations = project.configurations
-        Configuration fromConfiguration = configurations.getByName(from)
-        Configuration toConfiguration = configurations.getByName(to)
-
-        toConfiguration.withDependencies { deps ->
-            fromConfiguration.resolvedConfiguration.resolvedArtifacts
-                    .findAll { it.type == 'hpi' || it.type == 'jpi' }
-                    .collect { toDependency(project, it, from) }
-                    .each { deps.add(it) }
-        }
-    }
-
-    private static Dependency toDependency(Project project, ResolvedArtifact it, String from) {
-        project.dependencies.create("${it.moduleVersion.id}") { Dependency d ->
-            d.because "JpiPlugin added jar for compilation support (plugin present on $from)"
-        }
     }
 }

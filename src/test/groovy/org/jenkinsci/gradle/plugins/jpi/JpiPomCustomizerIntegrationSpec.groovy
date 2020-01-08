@@ -174,7 +174,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 coreVersion = '1.580.1'
             }
             dependencies {
-                jenkinsPlugins 'org.jenkins-ci.plugins:credentials:1.9.4'
+                api 'org.jenkins-ci.plugins:credentials:1.9.4'
             }
             """.stripIndent()
 
@@ -192,7 +192,23 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 coreVersion = '1.580.1'
             }
             dependencies {
-                jenkinsPlugins 'org.jenkins-ci.plugins:credentials:1.9.+'
+                api 'org.jenkins-ci.plugins:credentials:1.9.+'
+            }
+            
+            apply plugin: 'maven-publish'
+            publishing {
+                publications {
+                    mavenJpi(MavenPublication) {
+                        versionMapping {
+                            usage('java-api') {
+                                fromResolutionResult()
+                            }
+                            usage('java-runtime') {
+                                fromResolutionResult()
+                            }
+                        }
+                    }
+                }
             }
             """.stripIndent()
 
@@ -210,7 +226,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 coreVersion = '1.580.1'
             }
             dependencies {
-                jenkinsPlugins 'org.jenkins-ci.plugins:credentials:latest.release'
+                api 'org.jenkins-ci.plugins:credentials:latest.release'
             }
             """.stripIndent()
 
@@ -233,7 +249,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 }
             }
             dependencies {
-                credentialsImplementation 'org.jenkins-ci.plugins:credentials:1.9.4'
+                credentialsJenkinsPlugins 'org.jenkins-ci.plugins:credentials:1.9.4'
             }
             """.stripIndent()
 
@@ -251,7 +267,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 coreVersion = '1.580.1'
             }
             dependencies {
-                compile 'javax.ejb:ejb:2.1'
+                api 'org.apache.commons:commons-lang3:3.9'
             }
             """.stripIndent()
 
@@ -269,7 +285,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 coreVersion = '1.580.1'
             }
             dependencies {
-                compile('org.bitbucket.b_c:jose4j:0.5.5') {
+                api('org.bitbucket.b_c:jose4j:0.5.5') {
                     exclude group: 'org.slf4j', module: 'slf4j-api'
                 }
             }
@@ -333,7 +349,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
     void generatePom() {
         gradleRunner()
-        .withArguments('generatePomFileForMavenJpiPublication', '-s')
+        .withArguments('generatePomFileForMavenJpiPublication', 'generateMetadataFileForMavenJpiPublication', '-s')
                 .build()
     }
 

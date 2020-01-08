@@ -10,9 +10,9 @@
     <name>test</name>
     <dependencies>
         <dependency>
-            <groupId>javax.ejb</groupId>
-            <artifactId>ejb</artifactId>
-            <version>2.1</version>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.9</version>
             <scope>compile</scope>
         </dependency>
         <dependency>

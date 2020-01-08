@@ -22,10 +22,15 @@ class AddedDependenciesIntegrationSpec extends IntegrationSpec {
     def 'resolves test dependencies'() {
         given:
         build << '''\
+           java {
+                registerFeature('configFile') {
+                    usingSourceSet(sourceSets.main)
+                }
+            }
             dependencies {
-                jenkinsPlugins 'org.jenkins-ci.plugins:structs:1.1@jar'
-                optionalJenkinsPlugins 'org.jenkins-ci.plugins:config-file-provider:2.8.1@jar'
-                jenkinsTest 'org.jenkins-ci.plugins:cloudbees-folder:4.4@jar'
+                jenkinsPlugins 'org.jenkins-ci.plugins:structs:1.1'
+                configFileJenkinsPlugins 'org.jenkins-ci.plugins:config-file-provider:2.8.1'
+                testJenkinsPlugins 'org.jenkins-ci.plugins:cloudbees-folder:4.4'
             }
             '''.stripIndent()
 
@@ -40,7 +45,7 @@ class AddedDependenciesIntegrationSpec extends IntegrationSpec {
         File dir = new File(projectDir.root, 'build/resources/test/test-dependencies')
         dir.directory
         new File(dir, 'index').text == [
-                'structs', 'config-file-provider', 'cloudbees-folder',
+                'config-file-provider', 'structs', 'cloudbees-folder',
                 'token-macro', 'credentials',
         ].join('\n')
         new File(dir, 'structs.hpi').exists()

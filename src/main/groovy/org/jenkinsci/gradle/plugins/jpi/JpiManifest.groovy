@@ -26,6 +26,8 @@ import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.LibraryElements
+import org.gradle.api.attributes.Usage
 import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.util.GradleVersion
@@ -36,8 +38,6 @@ import java.util.jar.Manifest
 
 import static java.util.jar.Attributes.Name.MANIFEST_VERSION
 import static org.gradle.api.tasks.SourceSet.MAIN_SOURCE_SET_NAME
-import static org.jenkinsci.gradle.plugins.jpi.JpiPlugin.OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME
-import static org.jenkinsci.gradle.plugins.jpi.JpiPlugin.PLUGINS_DEPENDENCY_CONFIGURATION_NAME
 
 /**
  * Encapsulates the Jenkins plugin manifest and its generation.
@@ -139,10 +139,21 @@ class JpiManifest extends Manifest {
     private static String findDependencyProjects(Project project) {
         def buf = new StringBuilder()
 
-        listUpDependencies(project.configurations.getByName(PLUGINS_DEPENDENCY_CONFIGURATION_NAME), false, buf)
-        listUpDependencies(project.configurations.getByName(OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME), true, buf)
+        project.configurations.each { conf ->
+            if (isJenkinsRuntimeClasspath(conf)) {
+                listUpDependencies(conf, conf.name != JpiPlugin.JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME, buf)
+            }
+        }
 
         buf.toString()
+    }
+
+    private static boolean isJenkinsRuntimeClasspath(Configuration variant) {
+        return (variant.canBeResolved
+                && variant.name != JpiPlugin.TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME
+                && variant.attributes.getAttribute(Usage.USAGE_ATTRIBUTE)?.name == Usage.JAVA_RUNTIME
+                && variant.attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)?.name == Category.LIBRARY
+                && variant.attributes.getAttribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE)?.name == "jpi")
     }
 
     private static listUpDependencies(Configuration c, boolean optional, StringBuilder buf) {

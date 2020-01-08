@@ -1,6 +1,6 @@
 package org.jenkinsci.gradle.plugins.jpi
 
-import org.gradle.api.artifacts.Configuration
+import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Copy
@@ -8,7 +8,7 @@ import org.gradle.api.tasks.Copy
 class TestDependenciesTask extends Copy {
     public static final String TASK_NAME = 'resolveTestDependencies'
 
-    private Configuration configuration
+    private FileCollection artifacts
 
     protected Map<String, String> mapping = [:]
 
@@ -31,20 +31,22 @@ class TestDependenciesTask extends Copy {
 
     @Override
     protected void copy() {
-        getConfiguration().resolvedConfiguration.resolvedArtifacts.each {
-            mapping[it.file.name] = "${it.name}.${it.extension}"
+        artifacts.each {
+            def baseName = it.name.substring(0, it.name.lastIndexOf('-'))
+            def extension = it.name.substring(it.name.lastIndexOf('.') + 1)
+            mapping[it.name] = "${baseName}.${extension}"
         }
 
         super.copy()
     }
 
-    void setConfiguration(Configuration configuration) {
-        this.configuration = configuration
+    void setConfiguration(FileCollection configuration) {
+        this.artifacts = configuration
         this.from(configuration)
     }
 
     @Classpath
-    Configuration getConfiguration() {
-        configuration
+    FileCollection getConfiguration() {
+        artifacts
     }
 }

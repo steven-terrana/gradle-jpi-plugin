@@ -6,6 +6,7 @@ import org.gradle.api.XmlProvider
 import org.gradle.api.artifacts.DependencySet
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
+import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.Property
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPomDeveloper
@@ -16,7 +17,6 @@ import org.gradle.api.publish.maven.MavenPomScm
 
 import static org.gradle.api.artifacts.ArtifactRepositoryContainer.DEFAULT_MAVEN_CENTRAL_REPO_NAME
 import static org.gradle.api.artifacts.ArtifactRepositoryContainer.DEFAULT_MAVEN_LOCAL_REPO_NAME
-import static org.jenkinsci.gradle.plugins.jpi.JpiPlugin.CORE_DEPENDENCY_CONFIGURATION_NAME
 
 /**
  * Adds metadata to the JPI's POM.
@@ -104,11 +104,11 @@ class JpiPomCustomizer {
 
     private void addProvidedDependencies(Node pom) {
         DependencySet coreDependencies = project.configurations.
-                getByName(CORE_DEPENDENCY_CONFIGURATION_NAME).dependencies
+                getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME).dependencies
         Node dependenciesNode = pom.dependencies[0] as Node
         dependenciesNode = dependenciesNode ?: pom.appendNode('dependencies')
 
-        coreDependencies.each {
+        coreDependencies.findAll { it.name != 'jenkins-war' }.each {
             Node dependency = dependenciesNode.appendNode('dependency')
             ModuleVersionIdentifier mvid = ResolvedDependencySelector.selectedModuleVersion(
                     project,
