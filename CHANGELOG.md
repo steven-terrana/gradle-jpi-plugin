@@ -1,9 +1,13 @@
 ## 0.38.0 (unreleased)
 
-## 0.37.0 (2020-01-08)
+## 0.37.1 (2020-01-08)
 
   * support version constraints, including platforms, when using Gradle 5.3+ - [PR #128](https://github.com/jenkinsci/gradle-jpi-plugin/pull/128)
 
+## 0.37.0 (unpublished)
+
+  * publish failed part of the way through
+  
 ## 0.36.2 (2020-01-04)
 
   * disable module metadata generation because it does not contain all variants - [PR #127](https://github.com/jenkinsci/gradle-jpi-plugin/pull/127)
