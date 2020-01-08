@@ -60,8 +60,6 @@ class JpiPlugin implements Plugin<Project> {
     /**
      * Represents the dependencies on other Jenkins plugins.
      */
-    public static final String PLUGINS_DEPENDENCY_CONFIGURATION_NAME = 'jenkinsPlugins'
-    public static final String TEST_PLUGINS_DEPENDENCY_CONFIGURATION_NAME = 'testJenkinsPlugins'
     public static final String JENKINS_RUNTIME_ELEMENTS_CONFIGURATION_NAME = 'runtimeElementsJenkins'
     public static final String JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME = 'runtimeClasspathJenkins'
     public static final String TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME = 'testRuntimeClasspathJenkins'
@@ -265,13 +263,8 @@ class JpiPlugin implements Plugin<Project> {
         JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
         AdhocComponentWithVariants component = project.components.java
 
-        Configuration testPlugins = project.configurations.create(TEST_PLUGINS_DEPENDENCY_CONFIGURATION_NAME)
-        testPlugins.visible = false
-        testPlugins.canBeConsumed = false
-        testPlugins.canBeResolved = false
-        project.configurations.named(JavaPlugin.TEST_IMPLEMENTATION_CONFIGURATION_NAME).get().extendsFrom(testPlugins)
-
-        Configuration testRuntimeClasspathJenkins = project.configurations.create(TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME)
+        Configuration testRuntimeClasspathJenkins =
+                project.configurations.create(TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME)
         testRuntimeClasspathJenkins.visible = false
         testRuntimeClasspathJenkins.canBeConsumed = false
         testRuntimeClasspathJenkins.canBeResolved = true
@@ -280,63 +273,55 @@ class JpiPlugin implements Plugin<Project> {
             it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
             it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, "jpi"))
         }
-        testRuntimeClasspathJenkins.extendsFrom(testPlugins)
-        testRuntimeClasspathJenkins
+        testRuntimeClasspathJenkins.extendsFrom(
+                project.configurations.named(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME).get())
 
-        project.configurations.withType(Configuration) { Configuration runtimeElements ->
-            if (isRuntimeVariant(runtimeElements)) {
-                Configuration plugins = project.configurations.create(toFeatureSpecificConfigurationName(
-                        runtimeElements, PLUGINS_DEPENDENCY_CONFIGURATION_NAME))
-                plugins.visible = false
-                plugins.canBeConsumed = false
-                plugins.canBeResolved = false
-                plugins.description = 'Jenkins plugins which your plugin is built against'
-                project.configurations.named(toFeatureSpecificConfigurationName(
-                        runtimeElements, JavaPlugin.API_CONFIGURATION_NAME)).get().extendsFrom(plugins)
+        project.afterEvaluate {
+            // to make sure all optional feature configurations have been setup completely
+            project.configurations.withType(Configuration) { Configuration runtimeElements ->
+                if (isRuntimeVariant(runtimeElements)) {
+                    Configuration runtimeElementsJenkins = project.configurations.create(toFeatureSpecificConfigurationName(
+                            runtimeElements, JENKINS_RUNTIME_ELEMENTS_CONFIGURATION_NAME))
+                    runtimeElementsJenkins.canBeResolved = false
+                    runtimeElementsJenkins.canBeConsumed = true
+                    runtimeElementsJenkins.outgoing.artifact(project.tasks.named(JPI_TASK_NAME))
+                    runtimeElementsJenkins.attributes {
+                        it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
+                        it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
+                        it.attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling, Bundling.EXTERNAL))
+                        it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, "jpi"))
+                        it.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, javaConvention.targetCompatibility.majorVersion.toInteger())
+                    }
+                    runtimeElements.outgoing.capabilities.each {
+                        runtimeElementsJenkins.outgoing.capability(it)
+                    }
 
-                Configuration runtimeElementsJenkins = project.configurations.create(toFeatureSpecificConfigurationName(
-                        runtimeElements, JENKINS_RUNTIME_ELEMENTS_CONFIGURATION_NAME))
-                runtimeElementsJenkins.canBeResolved = false
-                runtimeElementsJenkins.canBeConsumed = true
-                runtimeElementsJenkins.extendsFrom(runtimeElements)
-                runtimeElementsJenkins.outgoing.artifact(project.tasks.named(JPI_TASK_NAME))
-                runtimeElementsJenkins.attributes {
-                    it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
-                    it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
-                    it.attribute(Bundling.BUNDLING_ATTRIBUTE, project.objects.named(Bundling, Bundling.EXTERNAL))
-                    it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, "jpi"))
-                    it.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, javaConvention.targetCompatibility.majorVersion.toInteger())
-                }
-                runtimeElementsJenkins.outgoing.capabilities.addAll(runtimeElements.outgoing.capabilities)
+                    Configuration runtimeClasspathJenkins = project.configurations.create(toFeatureSpecificConfigurationName(
+                            runtimeElements, JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME))
+                    runtimeClasspathJenkins.canBeResolved = true
+                    runtimeClasspathJenkins.canBeConsumed = false
+                    runtimeClasspathJenkins.extendsFrom(runtimeElements)
+                    runtimeClasspathJenkins.attributes {
+                        it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
+                        it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
+                        it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, "jpi"))
+                    }
 
-                Configuration runtimeClasspathJenkins = project.configurations.create(toFeatureSpecificConfigurationName(
-                        runtimeElements, JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME))
-                runtimeClasspathJenkins.canBeResolved = true
-                runtimeClasspathJenkins.canBeConsumed = false
-                runtimeClasspathJenkins.extendsFrom(plugins)
-                runtimeClasspathJenkins.attributes {
-                    it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
-                    it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
-                    it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, "jpi"))
-                }
-
-                component.addVariantsFromConfiguration(runtimeElementsJenkins) {
-                    if (runtimeElements.name != JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME) {
-                        it.mapToOptional()
+                    component.addVariantsFromConfiguration(runtimeElementsJenkins) {
+                        if (runtimeElements.name != JavaPlugin.RUNTIME_ELEMENTS_CONFIGURATION_NAME) {
+                            it.mapToOptional()
+                        }
                     }
                 }
-
-                testRuntimeClasspathJenkins.extendsFrom(plugins)
             }
         }
     }
 
     private static boolean isRuntimeVariant(Configuration variant) {
-        return variant.name == "runtimeElements" || variant.name.endsWith("RuntimeElements")
-        /*return (variant.canBeConsumed
+        return (variant.canBeConsumed
                 && variant.attributes.getAttribute(Usage.USAGE_ATTRIBUTE)?.name == Usage.JAVA_RUNTIME
                 && variant.attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)?.name == Category.LIBRARY
-                && variant.attributes.getAttribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE)?.name == LibraryElements.JAR)*/
+                && variant.attributes.getAttribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE)?.name == LibraryElements.JAR)
     }
 
     private static String toFeatureSpecificConfigurationName(Configuration runtimeElements, String baseName) {

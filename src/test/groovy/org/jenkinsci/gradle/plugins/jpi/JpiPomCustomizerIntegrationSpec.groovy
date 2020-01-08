@@ -249,7 +249,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 }
             }
             dependencies {
-                credentialsJenkinsPlugins 'org.jenkins-ci.plugins:credentials:1.9.4'
+                credentialsApi 'org.jenkins-ci.plugins:credentials:1.9.4'
             }
             """.stripIndent()
 

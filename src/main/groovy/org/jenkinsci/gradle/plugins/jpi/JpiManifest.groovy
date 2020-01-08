@@ -141,7 +141,8 @@ class JpiManifest extends Manifest {
 
         project.configurations.each { conf ->
             if (isJenkinsRuntimeClasspath(conf)) {
-                listUpDependencies(conf, conf.name != JpiPlugin.JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME, buf)
+                Configuration runtimeElements = project.configurations.named(conf.name.replace("Classpath", "Elements")).get()
+                listUpDependencies(conf, conf.name != JpiPlugin.JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME, runtimeElements, buf)
             }
         }
 
@@ -156,24 +157,25 @@ class JpiManifest extends Manifest {
                 && variant.attributes.getAttribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE)?.name == "jpi")
     }
 
-    private static listUpDependencies(Configuration c, boolean optional, StringBuilder buf) {
+    private static listUpDependencies(Configuration runtimeClasspath, boolean optional, Configuration runtimeElements, StringBuilder buf) {
         // The category attribute has been introduced in Gradle '5.3'
         if (GradleVersion.current() >= GradleVersion.version('5.3')) {
-            listUpResolvedDependencies(c, optional, buf)
+            listUpResolvedDependencies(runtimeClasspath, optional, runtimeElements, buf)
         } else {
-            legacyListUpDependencies(c, optional, buf)
+            legacyListUpDependencies(runtimeClasspath, optional, buf)
         }
     }
 
-    private static listUpResolvedDependencies(Configuration c, boolean optional, StringBuilder buf) {
+    private static listUpResolvedDependencies(Configuration runtimeClasspath, boolean optional, Configuration runtimeElements, StringBuilder buf) {
         def categoryAttribute = Attribute.of(Category.CATEGORY_ATTRIBUTE.name, String)
 
-        c.incoming.resolutionResult.root.dependencies.each { DependencyResult result ->
+        runtimeClasspath.incoming.resolutionResult.root.dependencies.each { DependencyResult result ->
             if (result.constraint || !(result instanceof ResolvedDependencyResult)) {
                 return
             }
             def selected = ((ResolvedDependencyResult) result).selected
             // TODO: Find a better way to exclude platform dependencies
+            // TODO: look at all variants and handle capabilities below in runtimeElements.dependencies.add()
             if (selected.variants.size() == 1 &&
                     selected.variants.get(0).attributes.getAttribute(categoryAttribute) != Category.LIBRARY) {
                 return
@@ -182,6 +184,10 @@ class JpiManifest extends Manifest {
             if (moduleVersion == null) {
                 return
             }
+            def pluginDependency = runtimeClasspath.allDependencies.find {
+                it.group == moduleVersion.group && it.name == moduleVersion.name }
+            runtimeElements.dependencies.add(pluginDependency)
+
             if (buf.length() > 0) {
                 buf.append(',')
             }

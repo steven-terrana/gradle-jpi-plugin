@@ -212,7 +212,7 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
         given:
         build << """\
             dependencies {
-                jenkinsPlugins 'org.jenkins-ci.plugins:ant:1.2'
+                api 'org.jenkins-ci.plugins:ant:1.2'
             }
             """.stripIndent()
 
@@ -227,8 +227,8 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
         given:
         build << """\
             dependencies {
-                jenkinsPlugins 'org.jenkinsci.plugins:git:1.1.15'
-                jenkinsPlugins 'org.jenkins-ci.plugins:ant:1.2'
+                api 'org.jenkinsci.plugins:git:1.1.15'
+                implementation 'org.jenkins-ci.plugins:ant:1.2'
             }
             """.stripIndent()
 
@@ -248,7 +248,7 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
                 }
             }
             dependencies {
-                antJenkinsPlugins 'org.jenkins-ci.plugins:ant:1.2'
+                antApi 'org.jenkins-ci.plugins:ant:1.2'
             }
             """.stripIndent()
 
@@ -271,8 +271,8 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
                 }
             }
             dependencies {
-                gitJenkinsPlugins 'org.jenkinsci.plugins:git:1.1.15'
-                antJenkinsPlugins 'org.jenkins-ci.plugins:ant:1.2'
+                gitApi 'org.jenkinsci.plugins:git:1.1.15'
+                antImplementation 'org.jenkins-ci.plugins:ant:1.2'
             }
             """.stripIndent()
 
@@ -295,10 +295,10 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
                 }
             }
             dependencies {
-                folderJenkinsPlugins 'org.jenkins-ci.plugins:cloudbees-folder:4.2'
-                jenkinsPlugins 'org.jenkinsci.plugins:git:1.1.15'
-                jenkinsPlugins 'org.jenkins-ci.plugins:ant:1.2'
-                credentialsJenkinsPlugins 'org.jenkins-ci.plugins:credentials:1.9.4'
+                folderApi 'org.jenkins-ci.plugins:cloudbees-folder:4.2'
+                api 'org.jenkinsci.plugins:git:1.1.15'
+                implementation 'org.jenkins-ci.plugins:ant:1.2'
+                credentialsImplementation 'org.jenkins-ci.plugins:credentials:1.9.4'
             }
             """.stripIndent()
 
@@ -318,8 +318,8 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
         given:
         build << """\
             dependencies {
-                jenkinsPlugins platform("io.jenkins.tools.bom:bom-2.138.x:4")
-                jenkinsPlugins 'org.jenkins-ci.plugins.workflow:workflow-api'
+                api platform("io.jenkins.tools.bom:bom-2.138.x:4")
+                implementation 'org.jenkins-ci.plugins.workflow:workflow-api'
             }
         """
 
