@@ -110,7 +110,7 @@ tasks.addRule("Pattern: testGradle<ID>") {
     }
 }
 
-setOf("4.10.3", "5.6.4")
+setOf("4.10.3", "5.6.4", "6.0.1")
         .map { tasks.named("testGradle$it") }
         .forEach { tasks.check { dependsOn(it) } }
 
