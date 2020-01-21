@@ -21,7 +21,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
             version '1.0'
             java {
                 sourceCompatibility = JavaVersion.VERSION_1_8
-                targetCompatibility = JavaVersion.VERSION_1_8        
+                targetCompatibility = JavaVersion.VERSION_1_8
             }
             """.stripIndent()
     }
@@ -209,7 +209,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
             dependencies {
                 api 'org.jenkins-ci.plugins:credentials:1.9.+'
             }
-            
+
             apply plugin: 'maven-publish'
             publishing {
                 publications {
@@ -352,12 +352,12 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
     static removeChangingDetails(moduleRoot) {
         moduleRoot.createdBy.gradle.version = ''
         moduleRoot.createdBy.gradle.buildId = ''
-        moduleRoot.variants.each { it.files.each { it.size = ''} }
-        moduleRoot.variants.each { it.files.each { it.sha512 = ''} }
-        moduleRoot.variants.each { it.files.each { it.sha256 = ''} }
-        moduleRoot.variants.each { it.files.each { it.sha1 = ''} }
-        moduleRoot.variants.each { it.files.each { it.md5 = ''} }
-        return moduleRoot
+        moduleRoot.variants.each { it.files.each { it.size = '' } }
+        moduleRoot.variants.each { it.files.each { it.sha512 = '' } }
+        moduleRoot.variants.each { it.files.each { it.sha256 = '' } }
+        moduleRoot.variants.each { it.files.each { it.sha1 = '' } }
+        moduleRoot.variants.each { it.files.each { it.md5 = '' } }
+        moduleRoot
     }
 
     private static String readResource(String fileName) {

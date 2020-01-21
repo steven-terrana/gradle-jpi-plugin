@@ -8,7 +8,6 @@ import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Category
-import org.gradle.api.plugins.JavaPlugin
 
 @CompileStatic
 class DependencyAnalysis {
@@ -27,8 +26,8 @@ class DependencyAnalysis {
         }
     }
 
-    private Attribute categoryAttribute = Attribute.of(Category.CATEGORY_ATTRIBUTE.name, String)
-    private List<JpiConfigurations> jpiConfigurations = new ArrayList<>()
+    private final Attribute categoryAttribute = Attribute.of(Category.CATEGORY_ATTRIBUTE.name, String)
+    private final List<JpiConfigurations> jpiConfigurations = []
 
     private DependencyAnalysisResult analysisResult
 
@@ -44,17 +43,16 @@ class DependencyAnalysis {
         }
 
         def manifestEntry = new StringBuilder()
-        def provided = project.configurations[JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME]
         def allLibraries = project.configurations.detachedConfiguration()
 
         jpiConfigurations.each { confs ->
-            analyseDependencies(confs, provided, allLibraries, manifestEntry)
+            analyseDependencies(confs, allLibraries, manifestEntry)
         }
         analysisResult = new DependencyAnalysisResult(allLibraries, manifestEntry.toString())
-        return analysisResult
+        analysisResult
     }
 
-    private analyseDependencies(JpiConfigurations configurations, Configuration provided,
+    private analyseDependencies(JpiConfigurations configurations,
                                 Configuration allLibraries, StringBuilder manifestEntry) {
         def optional = configurations.resolvablePlugins.name != JpiPlugin.JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME
 
@@ -83,8 +81,10 @@ class DependencyAnalysis {
                     manifestEntry.append(';resolution:=optional')
                 }
 
-                configurations.consumablePlugins.dependencies.addAll(configurations.resolvablePlugins.allDependencies.findAll {
-                    it instanceof ModuleDependency && it.group == moduleVersion.group && it.name == moduleVersion.name })
+                def moduleDependencies = configurations.resolvablePlugins.allDependencies.findAll {
+                    it instanceof ModuleDependency && it.group == moduleVersion.group && it.name == moduleVersion.name
+                }
+                configurations.consumablePlugins.dependencies.addAll(moduleDependencies)
             }
         }
         allLibraries.dependencies.addAll(configurations.consumableLibraries.allDependencies

@@ -32,8 +32,8 @@ class TestDependenciesTask extends Copy {
     @Override
     protected void copy() {
         artifacts.each {
-            def baseName = it.name.substring(0, it.name.lastIndexOf('-'))
-            def extension = it.name.substring(it.name.lastIndexOf('.') + 1)
+            def baseName = it.name[0..it.name.lastIndexOf('-') - 1]
+            def extension = it.name[it.name.lastIndexOf('.') + 1..-1]
             mapping[it.name] = "${baseName}.${extension}"
         }
 

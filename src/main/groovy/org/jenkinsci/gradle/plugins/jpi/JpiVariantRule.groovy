@@ -23,20 +23,21 @@ class JpiVariantRule implements ComponentMetadataRule {
             return
         }
 
-        ctx.details.withVariant("runtime") {
+        ctx.details.withVariant('runtime') {
             it.attributes {
-                it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, "jpi"))
+                it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, 'jpi'))
             }
         }
-        ctx.details.withVariant("compile") {
+        ctx.details.withVariant('compile') {
             it.withFiles {
                 it.removeAllFiles()
                 it.addFile("${id.name}-${id.version}.jar")
             }
         }
-        ctx.details.addVariant("jarRuntimeElements", "runtime") {
+        ctx.details.addVariant('jarRuntimeElements', 'runtime') {
             it.attributes {
-                it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, LibraryElements.JAR))
+                it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                        objects.named(LibraryElements, LibraryElements.JAR))
             }
             it.withFiles {
                 it.removeAllFiles()
@@ -46,8 +47,8 @@ class JpiVariantRule implements ComponentMetadataRule {
     }
 
     private boolean isJenkinsPackaging(ComponentMetadataContext ctx) {
-        // TODO we need public API fir this
+        // TODO we need public API for this - https://github.com/gradle/gradle/issues/11955
         String packaging = ctx.metadata.packaging
-        return packaging == 'jpi' ||  packaging == 'hpi'
+        packaging == 'jpi' ||  packaging == 'hpi'
     }
 }
