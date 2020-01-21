@@ -42,6 +42,7 @@ import org.gradle.api.tasks.bundling.War
 import org.gradle.api.tasks.compile.GroovyCompile
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
+import org.gradle.util.GradleVersion
 
 import static org.gradle.api.logging.LogLevel.INFO
 import static org.gradle.api.tasks.SourceSet.MAIN_SOURCE_SET_NAME
@@ -69,6 +70,11 @@ class JpiPlugin implements Plugin<Project> {
     public static final String WEB_APP_DIR = "src/main/webapp"
 
     void apply(final Project gradleProject) {
+        if (GradleVersion.current() < GradleVersion.version('6.0')) {
+            throw new RuntimeException("This version of the JPI plugin requires Gradle 6+." +
+                    "For older Gradle versions, please use an older version of the JPI plugin.")
+        }
+
         gradleProject.plugins.apply(JavaLibraryPlugin)
         gradleProject.plugins.apply(GroovyPlugin)
 

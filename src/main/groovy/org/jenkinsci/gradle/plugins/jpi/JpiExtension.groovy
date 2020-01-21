@@ -22,7 +22,6 @@ import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSet
 import org.gradle.util.ConfigureUtil
-import org.gradle.util.GradleVersion
 
 /**
  * This gets exposed to the project as 'jpi' to offer additional convenience methods.
@@ -165,9 +164,8 @@ class JpiExtension {
             project.dependencies {
                 def jenkinsWar = [group: 'org.jenkins-ci.main', name: 'jenkins-war', version: v]
 
-                if (GradleVersion.current() >= GradleVersion.version('4.6')) {
-                    annotationProcessor "org.jenkins-ci.main:jenkins-core:$v"
-                }
+                annotationProcessor "org.jenkins-ci.main:jenkins-core:$v"
+
                 compileOnly(
                         [group: 'org.jenkins-ci.main', name: 'jenkins-core', version: v],
                         [group: findBugsGroup, name: 'annotations', version: findBugsVersion],

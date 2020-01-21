@@ -21,7 +21,6 @@ import net.java.sezpoz.Index
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.attributes.Attribute
@@ -30,7 +29,6 @@ import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
 import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.util.GradleVersion
 import org.jenkinsci.gradle.plugins.jpi.internal.VersionCalculator
 
 import java.util.jar.Attributes
@@ -159,11 +157,7 @@ class JpiManifest extends Manifest {
 
     private static listUpDependencies(Configuration runtimeClasspath, boolean optional, Configuration runtimeElements, StringBuilder buf) {
         // The category attribute has been introduced in Gradle '5.3'
-        if (GradleVersion.current() >= GradleVersion.version('5.3')) {
-            listUpResolvedDependencies(runtimeClasspath, optional, runtimeElements, buf)
-        } else {
-            legacyListUpDependencies(runtimeClasspath, optional, buf)
-        }
+        listUpResolvedDependencies(runtimeClasspath, optional, runtimeElements, buf)
     }
 
     private static listUpResolvedDependencies(Configuration runtimeClasspath, boolean optional, Configuration runtimeElements, StringBuilder buf) {
@@ -194,20 +188,6 @@ class JpiManifest extends Manifest {
             buf.append(moduleVersion.name)
             buf.append(':')
             buf.append(moduleVersion.version)
-            if (optional) {
-                buf.append(';resolution:=optional')
-            }
-        }
-    }
-
-    private static legacyListUpDependencies(Configuration c, boolean optional, StringBuilder buf) {
-        for (Dependency d : c.dependencies) {
-            if (buf.length() > 0) {
-                buf.append(',')
-            }
-            buf.append(d.name)
-            buf.append(':')
-            buf.append(d.version)
             if (optional) {
                 buf.append(';resolution:=optional')
             }
