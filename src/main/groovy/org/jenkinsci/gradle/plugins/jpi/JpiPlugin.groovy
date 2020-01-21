@@ -183,6 +183,9 @@ class JpiPlugin implements Plugin<Project> {
         JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
 
         def testDependenciesTask = project.tasks.register(TestDependenciesTask.TASK_NAME, TestDependenciesTask) {
+            // We need to be lenient, because plugins published only with pom will also have dependencies to libraries
+            // in the JPI variant. The JpiVariantRule can not correct that. The lenient resolving here will ignore
+            // these dependencies because they do not have an JPI variant themselves.
             it.configuration = project.configurations.named(TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME)
                     .get().incoming.artifactView { it.lenient(true) }.files
         }
