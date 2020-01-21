@@ -298,36 +298,6 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
         compareXml('compile-dependencies-with-excludes-pom.xml', actualPomIn(projectDir))
     }
 
-    def 'updated FindBugs version in 1.618'() {
-        setup:
-        build << """\
-            jenkinsPlugin {
-                coreVersion = '1.618'
-            }
-            """.stripIndent()
-
-        when:
-        generatePom()
-
-        then:
-        compareXml('updated-findbugs-pom.xml', actualPomIn(projectDir))
-    }
-
-    def 'updated Servlet API version in 2.0'() {
-        setup:
-        build << """\
-            jenkinsPlugin {
-                coreVersion = '2.0'
-            }
-            """.stripIndent()
-
-        when:
-        generatePom()
-
-        then:
-        compareXml('updated-servlet-api-pom.xml', actualPomIn(projectDir))
-    }
-
     private static boolean compareXml(String fileName, File actual) {
         !DiffBuilder.compare(Input.fromString(readXml(fileName)))
                 .withTest(Input.fromString(toXml(new XmlParser().parse(actual))))

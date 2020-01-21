@@ -3,10 +3,7 @@ package org.jenkinsci.gradle.plugins.jpi
 import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.XmlProvider
-import org.gradle.api.artifacts.DependencySet
-import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.repositories.MavenArtifactRepository
-import org.gradle.api.plugins.JavaPlugin
 import org.gradle.api.provider.Property
 import org.gradle.api.publish.maven.MavenPom
 import org.gradle.api.publish.maven.MavenPomDeveloper
@@ -97,28 +94,6 @@ class JpiPomCustomizer {
     void additionalCustomizations(Node pom) {
         if (repositories) {
             pom.appendNode('repositories', repositories.collect { makeRepositoryNode(it) })
-        }
-        // TODO Can this be removed? 'provided' dependencies are not of for poms that are metadata (they are only for local project poms in Maven)
-        addProvidedDependencies(pom)
-    }
-
-    private void addProvidedDependencies(Node pom) {
-        DependencySet coreDependencies = project.configurations.
-                getByName(JavaPlugin.COMPILE_ONLY_CONFIGURATION_NAME).dependencies
-        Node dependenciesNode = pom.dependencies[0] as Node
-        dependenciesNode = dependenciesNode ?: pom.appendNode('dependencies')
-
-        coreDependencies.findAll { it.name != 'jenkins-war' }.each {
-            Node dependency = dependenciesNode.appendNode('dependency')
-            ModuleVersionIdentifier mvid = ResolvedDependencySelector.selectedModuleVersion(
-                    project,
-                    'compile',
-                    it.group,
-                    it.name)
-            dependency.appendNode('groupId', it.group)
-            dependency.appendNode('artifactId', it.name)
-            dependency.appendNode('version',  mvid.version ?: it.version)
-            dependency.appendNode('scope', 'provided')
         }
     }
 
