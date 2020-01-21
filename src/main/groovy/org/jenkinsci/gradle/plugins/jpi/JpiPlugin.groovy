@@ -69,6 +69,8 @@ class JpiPlugin implements Plugin<Project> {
     public static final String LICENSE_TASK_NAME = 'generateLicenseInfo'
     public static final String WEB_APP_DIR = "src/main/webapp"
 
+    DependencyAnalysis dependencyAnalysis = new DependencyAnalysis()
+
     void apply(final Project gradleProject) {
         if (GradleVersion.current() < GradleVersion.version('6.0')) {
             throw new RuntimeException("This version of the JPI plugin requires Gradle 6+." +
@@ -170,7 +172,9 @@ class JpiPlugin implements Plugin<Project> {
             def extension = jpiExtension.fileExtension
             it.archiveFileName.set(fileName)
             it.archiveExtension.set(extension)
-            it.classpath(jar, project.configurations.named(JavaPlugin.RUNTIME_CLASSPATH_CONFIGURATION_NAME))
+            it.classpath(jar, project.provider {
+                project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.analyse(project).allLibraryDependencies
+            })
             it.from(WEB_APP_DIR)
         }
     }
@@ -207,18 +211,13 @@ class JpiPlugin implements Plugin<Project> {
     }
 
     private static configureLicenseInfo(Project project) {
-        JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
-
         def licenseTask = project.tasks.register(LICENSE_TASK_NAME, LicenseTask) {
             it.description = 'Generates license information.'
             it.group = BasePlugin.BUILD_GROUP
             it.outputDirectory = new File(project.buildDir, 'licenses')
-            it.configurations = [
-                    project.configurations[javaConvention.sourceSets.main.runtimeClasspathConfigurationName]
-            ]
-            it.providedConfigurations = [
-                    project.configurations[javaConvention.sourceSets.main.compileOnlyConfigurationName]
-            ]
+            it.libraryConfiguration.set(project.provider {
+                project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.analyse(project).allLibraryDependencies
+            })
         }
 
         project.tasks.named(JPI_TASK_NAME).configure {
@@ -318,6 +317,11 @@ class JpiPlugin implements Plugin<Project> {
                             it.mapToOptional()
                         }
                     }
+
+                    project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.registerJpiConfigurations(
+                            runtimeElements,
+                            runtimeElementsJenkins,
+                            runtimeClasspathJenkins)
                 }
             }
         }

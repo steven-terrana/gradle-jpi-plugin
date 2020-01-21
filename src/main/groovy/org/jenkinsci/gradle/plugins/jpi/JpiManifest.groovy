@@ -20,13 +20,6 @@ import jenkins.YesNoMaybe
 import net.java.sezpoz.Index
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Configuration
-import org.gradle.api.artifacts.result.DependencyResult
-import org.gradle.api.artifacts.result.ResolvedDependencyResult
-import org.gradle.api.attributes.Attribute
-import org.gradle.api.attributes.Category
-import org.gradle.api.attributes.LibraryElements
-import org.gradle.api.attributes.Usage
 import org.gradle.api.file.FileCollection
 import org.gradle.api.plugins.JavaPluginConvention
 import org.jenkinsci.gradle.plugins.jpi.internal.VersionCalculator
@@ -90,7 +83,7 @@ class JpiManifest extends Manifest {
 
         mainAttributes.putValue('Mask-Classes', conv.maskClasses)
 
-        def dep = findDependencyProjects(project)
+        def dep = project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.analyse(project).manifestPluginDependencies
         if (dep.length() > 0) {
             mainAttributes.putValue('Plugin-Dependencies', dep)
         }
@@ -130,66 +123,6 @@ class JpiManifest extends Manifest {
                     throw new GradleException("Overlapping Sezpoz file: ${it}. Use joint compilation!")
                 }
                 existingSezpozFiles.add(it)
-            }
-        }
-    }
-
-    private static String findDependencyProjects(Project project) {
-        def buf = new StringBuilder()
-
-        project.configurations.each { conf ->
-            if (isJenkinsRuntimeClasspath(conf)) {
-                Configuration runtimeElements = project.configurations.named(conf.name.replace("Classpath", "Elements")).get()
-                listUpDependencies(conf, conf.name != JpiPlugin.JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME, runtimeElements, buf)
-            }
-        }
-
-        buf.toString()
-    }
-
-    private static boolean isJenkinsRuntimeClasspath(Configuration variant) {
-        return (variant.canBeResolved
-                && variant.name != JpiPlugin.TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME
-                && variant.attributes.getAttribute(Usage.USAGE_ATTRIBUTE)?.name == Usage.JAVA_RUNTIME
-                && variant.attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)?.name == Category.LIBRARY
-                && variant.attributes.getAttribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE)?.name == "jpi")
-    }
-
-    private static listUpDependencies(Configuration runtimeClasspath, boolean optional, Configuration runtimeElements, StringBuilder buf) {
-        // The category attribute has been introduced in Gradle '5.3'
-        listUpResolvedDependencies(runtimeClasspath, optional, runtimeElements, buf)
-    }
-
-    private static listUpResolvedDependencies(Configuration runtimeClasspath, boolean optional, Configuration runtimeElements, StringBuilder buf) {
-        def categoryAttribute = Attribute.of(Category.CATEGORY_ATTRIBUTE.name, String)
-
-        runtimeClasspath.incoming.resolutionResult.root.dependencies.each { DependencyResult result ->
-            if (result.constraint || !(result instanceof ResolvedDependencyResult)) {
-                return
-            }
-            def selected = ((ResolvedDependencyResult) result).selected
-            // TODO: Find a better way to exclude platform dependencies
-            // TODO: look at all variants and handle capabilities below in runtimeElements.dependencies.add()
-            if (selected.variants.size() == 1 &&
-                    selected.variants.get(0).attributes.getAttribute(categoryAttribute) != Category.LIBRARY) {
-                return
-            }
-            def moduleVersion = selected.moduleVersion
-            if (moduleVersion == null) {
-                return
-            }
-            def pluginDependency = runtimeClasspath.allDependencies.find {
-                it.group == moduleVersion.group && it.name == moduleVersion.name }
-            runtimeElements.dependencies.add(pluginDependency)
-
-            if (buf.length() > 0) {
-                buf.append(',')
-            }
-            buf.append(moduleVersion.name)
-            buf.append(':')
-            buf.append(moduleVersion.version)
-            if (optional) {
-                buf.append(';resolution:=optional')
             }
         }
     }

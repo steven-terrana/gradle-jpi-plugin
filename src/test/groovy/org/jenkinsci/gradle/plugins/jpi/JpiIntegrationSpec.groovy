@@ -115,6 +115,7 @@ class JpiIntegrationSpec extends IntegrationSpec {
             repositories { mavenCentral() }
             dependencies {
                 implementation 'junit:junit:4.12'
+                api 'org.jenkins-ci.plugins:credentials:1.9.4'
             }
             '''.stripIndent()
 
@@ -140,6 +141,7 @@ class JpiIntegrationSpec extends IntegrationSpec {
         !hpiEntries.contains('WEB-INF/classes/')
         hpiEntries.contains(jarPathInHpi)
         hpiEntries.contains('WEB-INF/lib/junit-4.12.jar')
+        !hpiEntries.contains('WEB-INF/lib/credentials-1.9.4.jar')
 
         def generatedJar = new File(projectDir.root, "${projectName}-${projectVersion}.jar")
         Files.copy(hpiFile.getInputStream(hpiFile.getEntry(jarPathInHpi)), generatedJar.toPath())
