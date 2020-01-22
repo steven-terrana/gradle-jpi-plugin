@@ -17,6 +17,9 @@ class ServerTaskSpec extends IntegrationSpec {
             jenkinsPlugin {
                 coreVersion = '1.580.1'
             }
+            dependencies {
+                jenkinsServer 'org.jenkins-ci.plugins:git:3.12.1'
+            }
             '''.stripIndent()
 
         when:
@@ -41,6 +44,7 @@ class ServerTaskSpec extends IntegrationSpec {
         then:
         output.contains('/jenkins-war-1.580.1.war')
         output.contains('webroot: System.getProperty("JENKINS_HOME")')
+        new File(projectDir.root, 'work/plugins/git-3.12.1.hpi').exists()
     }
 
 }
