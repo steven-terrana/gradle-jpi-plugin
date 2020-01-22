@@ -59,11 +59,14 @@ import static org.jenkinsci.gradle.plugins.jpi.JpiManifest.attributesToMap
 class JpiPlugin implements Plugin<Project> {
 
     /**
-     * Represents the dependencies on other Jenkins plugins.
+     * Represents the extra dependencies on other Jenkins plugins for the server task.
      */
+    public static final String JENKINS_SERVER_DEPENDENCY_CONFIGURATION_NAME = 'jenkinsServer'
+
     public static final String JENKINS_RUNTIME_ELEMENTS_CONFIGURATION_NAME = 'runtimeElementsJenkins'
     public static final String JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME = 'runtimeClasspathJenkins'
     public static final String TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME = 'testRuntimeClasspathJenkins'
+    public static final String SERVER_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME = 'serverRuntimeClasspathJenkins'
 
     public static final String JPI_TASK_NAME = 'jpi'
     public static final String LICENSE_TASK_NAME = 'generateLicenseInfo'
@@ -272,17 +275,15 @@ class JpiPlugin implements Plugin<Project> {
         AdhocComponentWithVariants component = project.components.java
 
         Configuration testRuntimeClasspathJenkins =
-                project.configurations.create(TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME)
+                project.configurations.create(JENKINS_SERVER_DEPENDENCY_CONFIGURATION_NAME)
         testRuntimeClasspathJenkins.visible = false
         testRuntimeClasspathJenkins.canBeConsumed = false
-        testRuntimeClasspathJenkins.canBeResolved = true
-        testRuntimeClasspathJenkins.attributes {
-            it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
-            it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
-            it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, project.objects.named(LibraryElements, 'jpi'))
-        }
-        testRuntimeClasspathJenkins.extendsFrom(
-                project.configurations.named(JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME).get())
+        testRuntimeClasspathJenkins.canBeResolved = false
+
+        setupTestRuntimeClasspath(project, TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME,
+                [JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME])
+        setupTestRuntimeClasspath(project, SERVER_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME,
+                [JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME, JENKINS_SERVER_DEPENDENCY_CONFIGURATION_NAME])
 
         project.afterEvaluate {
             // to make sure all optional feature configurations have been setup completely
@@ -337,6 +338,23 @@ class JpiPlugin implements Plugin<Project> {
                             runtimeClasspathJenkins)
                 }
             }
+        }
+    }
+
+    private static void setupTestRuntimeClasspath(Project project, String name, List<String> extendsFrom) {
+        Configuration testRuntimeClasspathJenkins =
+                project.configurations.create(name)
+        testRuntimeClasspathJenkins.visible = false
+        testRuntimeClasspathJenkins.canBeConsumed = false
+        testRuntimeClasspathJenkins.canBeResolved = true
+        testRuntimeClasspathJenkins.attributes {
+            it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
+            it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
+            it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                    project.objects.named(LibraryElements, 'jpi'))
+        }
+        extendsFrom.each {
+            testRuntimeClasspathJenkins.extendsFrom(project.configurations[it])
         }
     }
 

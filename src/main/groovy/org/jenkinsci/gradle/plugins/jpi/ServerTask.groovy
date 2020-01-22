@@ -18,12 +18,10 @@ package org.jenkinsci.gradle.plugins.jpi
 import java.util.jar.JarFile
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
-import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.tasks.TaskAction
 import org.gradle.util.GFileUtils
 
-import static org.jenkinsci.gradle.plugins.jpi.JpiPlugin.JENKINS_SERVER_DEPENDENCY_CONFIGURATION_NAME
-import static org.jenkinsci.gradle.plugins.jpi.JpiPlugin.PLUGINS_DEPENDENCY_CONFIGURATION_NAME
+import static JpiPlugin.SERVER_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME
 
 /**
  * Task that starts Jenkins in place with the current plugin.
@@ -37,8 +35,12 @@ class ServerTask extends DefaultTask {
 
     @TaskAction
     def start() {
-        def c = project.configurations.getByName(JpiPlugin.WAR_DEPENDENCY_CONFIGURATION_NAME)
-        def files = c.resolve()
+        def jenkinsWar = project.extensions.getByType(JpiExtension).jenkinsWar
+        Set<File> files = []
+        if (jenkinsWar) {
+            def c = project.configurations.detachedConfiguration(jenkinsWar)
+            files = c.resolve()
+        }
         if (files.isEmpty()) {
             throw new GradleException('No jenkins.war dependency is specified')
         }
@@ -78,15 +80,13 @@ class ServerTask extends DefaultTask {
     }
 
     private copyPluginDependencies() {
-        Set<ResolvedArtifact> artifacts = []
-        [PLUGINS_DEPENDENCY_CONFIGURATION_NAME, JENKINS_SERVER_DEPENDENCY_CONFIGURATION_NAME].each { String name ->
-            artifacts += project.configurations[name].resolvedConfiguration.resolvedArtifacts
-        }
+        def artifacts = project.configurations[SERVER_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME].
+            incoming.artifactView { it.lenient(true) }.files
 
         // copy the resolved HPI/JPI files to the plugins directory
         def workDir = project.extensions.getByType(JpiExtension).workDir
-        artifacts.findAll { it.extension in ['hpi', 'jpi'] }.each {
-            GFileUtils.copyFile(it.file, new File(workDir, "plugins/${it.name}.${it.extension}"))
+        artifacts.each { file ->
+            GFileUtils.copyFile(file, new File(workDir, "plugins/${file.name}"))
         }
     }
 
