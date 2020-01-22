@@ -1,26 +1,28 @@
 package org.jenkinsci.gradle.plugins.jpi
 
+import spock.lang.Unroll
+
 class ServerTaskSpec extends IntegrationSpec {
 
-    def 'server task is working'() {
+    @Unroll
+    def 'server task is working - Jenkins #jenkinsVersion'() {
         given:
-        projectDir.newFile('gradle.properties')  << 'org.gradle.daemon=false'
         projectDir.newFile('settings.gradle')  << """\
             rootProject.name = "test-project"
             includeBuild('${new File('').absolutePath}')
         """
         def build = projectDir.newFile('build.gradle')
-        build << '''\
+        build << """\
             plugins {
                 id 'org.jenkins-ci.jpi'
             }
             jenkinsPlugin {
-                coreVersion = '1.580.1'
+                coreVersion = '$jenkinsVersion'
             }
             dependencies {
                 jenkinsServer 'org.jenkins-ci.plugins:git:3.12.1'
             }
-            '''.stripIndent()
+            """.stripIndent()
 
         when:
         Thread.start {
@@ -39,12 +41,17 @@ class ServerTaskSpec extends IntegrationSpec {
         }
 
         // run a separate process because the Jenkins shutdown kills the daemon
-        def output = new File('./gradlew server -Djenkins.httpPort=8456').absolutePath.execute(null, projectDir.root).text
+        def gradleProcess = new File('./gradlew server -Djenkins.httpPort=8456 --no-daemon').
+                absolutePath.execute(null, projectDir.root)
+        def output = gradleProcess.text
 
         then:
-        output.contains('/jenkins-war-1.580.1.war')
+        output.contains("/jenkins-war-${jenkinsVersion}.war")
         output.contains('webroot: System.getProperty("JENKINS_HOME")')
-        new File(projectDir.root, 'work/plugins/git-3.12.1.hpi').exists()
+        new File(projectDir.root, 'work/plugins/git.hpi').exists()
+
+        where:
+        jenkinsVersion << ['1.580.1', '2.64']
     }
 
 }

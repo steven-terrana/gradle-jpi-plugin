@@ -81,12 +81,12 @@ class ServerTask extends DefaultTask {
 
     private copyPluginDependencies() {
         def artifacts = project.configurations[SERVER_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME].
-            incoming.artifactView { it.lenient(true) }.files
+                resolvedConfiguration.resolvedArtifacts
 
         // copy the resolved HPI/JPI files to the plugins directory
         def workDir = project.extensions.getByType(JpiExtension).workDir
-        artifacts.each { file ->
-            GFileUtils.copyFile(file, new File(workDir, "plugins/${file.name}"))
+        artifacts.findAll { it.extension in ['hpi', 'jpi'] }.each {
+            GFileUtils.copyFile(it.file, new File(workDir, "plugins/${it.name}.${it.extension}"))
         }
     }
 

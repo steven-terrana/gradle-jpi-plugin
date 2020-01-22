@@ -164,6 +164,7 @@ class JpiExtension {
         if (this.coreVersion) {
             project.dependencies {
                 jenkinsWarCoordinates = [group: 'org.jenkins-ci.main', name: 'jenkins-war', version: v]
+                testRuntimeOnly(jenkinsWarCoordinates)
 
                 annotationProcessor "org.jenkins-ci.main:jenkins-core:$v"
 
@@ -172,12 +173,6 @@ class JpiExtension {
                         [group: findBugsGroup, name: 'annotations', version: findBugsVersion],
                         [group: 'javax.servlet', name: servletApiArtifact, version: servletApiVersion],
                 )
-
-                if (new VersionNumber(this.coreVersion) < new VersionNumber('2.64')) {
-                    testRuntimeOnly("org.jenkins-ci.main:jenkins-war:${v}:war-for-test")
-                } else {
-                    testRuntimeOnly(jenkinsWarCoordinates)
-                }
 
                 testImplementation("org.jenkins-ci.main:jenkins-test-harness:${testHarnessVersion}")
                 testImplementation("org.jenkins-ci.main:ui-samples-plugin:${uiSamplesVersion}")

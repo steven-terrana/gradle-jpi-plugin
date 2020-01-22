@@ -186,11 +186,7 @@ class JpiPlugin implements Plugin<Project> {
         JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
 
         def testDependenciesTask = project.tasks.register(TestDependenciesTask.TASK_NAME, TestDependenciesTask) {
-            // We need to be lenient, because plugins published only with pom will also have dependencies to libraries
-            // in the JPI variant. The JpiVariantRule can not correct that. The lenient resolving here will ignore
-            // these dependencies because they do not have an JPI variant themselves.
             it.configuration = project.configurations.named(TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME)
-                    .get().incoming.artifactView { it.lenient(true) }.files
         }
 
         project.tasks.named(javaConvention.sourceSets.test.processResourcesTaskName).configure {
@@ -270,15 +266,16 @@ class JpiPlugin implements Plugin<Project> {
 
     private static configureConfigurations(Project project) {
         project.dependencies.components.all(JpiVariantRule)
+        project.dependencies.components.withModule(JenkinsWarRule.JENKINS_WAR_COORDINATES, JenkinsWarRule)
 
         JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
         AdhocComponentWithVariants component = project.components.java
 
-        Configuration testRuntimeClasspathJenkins =
+        Configuration jenkinsServer =
                 project.configurations.create(JENKINS_SERVER_DEPENDENCY_CONFIGURATION_NAME)
-        testRuntimeClasspathJenkins.visible = false
-        testRuntimeClasspathJenkins.canBeConsumed = false
-        testRuntimeClasspathJenkins.canBeResolved = false
+        jenkinsServer.visible = false
+        jenkinsServer.canBeConsumed = false
+        jenkinsServer.canBeResolved = false
 
         setupTestRuntimeClasspath(project, TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME,
                 [JavaPlugin.TEST_RUNTIME_CLASSPATH_CONFIGURATION_NAME])
