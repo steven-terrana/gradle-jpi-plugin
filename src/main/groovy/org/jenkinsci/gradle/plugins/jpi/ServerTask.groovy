@@ -35,10 +35,10 @@ class ServerTask extends DefaultTask {
 
     @TaskAction
     def start() {
-        def jenkinsWar = project.extensions.getByType(JpiExtension).jenkinsWar
+        def jenkinsWar = project.extensions.getByType(JpiExtension).jenkinsWarCoordinates
         Set<File> files = []
         if (jenkinsWar) {
-            def c = project.configurations.detachedConfiguration(jenkinsWar)
+            def c = project.configurations.detachedConfiguration(project.dependencies.create(jenkinsWar))
             files = c.resolve()
         }
         if (files.isEmpty()) {

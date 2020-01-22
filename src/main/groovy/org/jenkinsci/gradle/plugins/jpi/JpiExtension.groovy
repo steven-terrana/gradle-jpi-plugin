@@ -18,7 +18,6 @@ package org.jenkinsci.gradle.plugins.jpi
 import hudson.util.VersionNumber
 import org.gradle.api.GradleException
 import org.gradle.api.Project
-import org.gradle.api.artifacts.Dependency
 import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSet
@@ -32,7 +31,7 @@ import org.gradle.util.ConfigureUtil
  */
 class JpiExtension {
     final Project project
-    Dependency jenkinsWar
+    Map<String, String> jenkinsWarCoordinates
 
     JpiExtension(Project project) {
         this.project = project
@@ -164,7 +163,7 @@ class JpiExtension {
 
         if (this.coreVersion) {
             project.dependencies {
-                def jenkinsWarCoordinates = [group: 'org.jenkins-ci.main', name: 'jenkins-war', version: v]
+                jenkinsWarCoordinates = [group: 'org.jenkins-ci.main', name: 'jenkins-war', version: v]
 
                 annotationProcessor "org.jenkins-ci.main:jenkins-core:$v"
 
@@ -174,12 +173,10 @@ class JpiExtension {
                         [group: 'javax.servlet', name: servletApiArtifact, version: servletApiVersion],
                 )
 
-                jenkinsWar = compileOnly(jenkinsWarCoordinates)
-
                 if (new VersionNumber(this.coreVersion) < new VersionNumber('2.64')) {
-                    testImplementation("org.jenkins-ci.main:jenkins-war:${v}:war-for-test")
+                    testRuntimeOnly("org.jenkins-ci.main:jenkins-war:${v}:war-for-test")
                 } else {
-                    testImplementation(jenkinsWar)
+                    testRuntimeOnly(jenkinsWarCoordinates)
                 }
 
                 testImplementation("org.jenkins-ci.main:jenkins-test-harness:${testHarnessVersion}")
