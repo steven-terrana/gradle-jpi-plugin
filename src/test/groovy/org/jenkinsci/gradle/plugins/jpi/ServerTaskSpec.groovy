@@ -26,20 +26,20 @@ class ServerTaskSpec extends IntegrationSpec {
         Thread.start {
             int response = 0
             Thread.sleep(5000)
-            while(response != 200) {
-                Thread.sleep(500)
+            while (response != 200) {
+                Thread.sleep(1000)
                 try {
-                    def shutdown = new URL('http://localhost:8080/safeExit').openConnection()
-                    shutdown.setRequestMethod("POST")
-                    response = shutdown.getResponseCode()
-                } catch (Exception e) {
-                    println e.message
+                    def shutdown = new URL('http://localhost:8456/safeExit').openConnection()
+                    shutdown.requestMethod = 'POST'
+                    response = shutdown.responseCode
+                } catch (ConnectException e) {
+                    e.message
                 }
             }
         }
 
         // run a separate process because the Jenkins shutdown kills the daemon
-        def output = new File('./gradlew server').absolutePath.execute(null, projectDir.root).text
+        def output = new File('./gradlew server -Djenkins.httpPort=8456').absolutePath.execute(null, projectDir.root).text
 
         then:
         output.contains('/jenkins-war-1.580.1.war')
