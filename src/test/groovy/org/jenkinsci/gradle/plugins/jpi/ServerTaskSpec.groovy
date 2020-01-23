@@ -1,7 +1,9 @@
 package org.jenkinsci.gradle.plugins.jpi
 
+import spock.lang.IgnoreIf
 import spock.lang.Unroll
 
+@IgnoreIf({ System.getProperty('os.name').toLowerCase().contains('windows') })
 class ServerTaskSpec extends IntegrationSpec {
 
     @Unroll
@@ -41,7 +43,7 @@ class ServerTaskSpec extends IntegrationSpec {
         }
 
         // run a separate process because the Jenkins shutdown kills the daemon
-        def gradleProcess = "${gradlew()} server -Djenkins.httpPort=8456 --no-daemon".
+        def gradleProcess = "${path(new File('gradlew'))} server -Djenkins.httpPort=8456 --no-daemon".
                 execute(null, projectDir.root)
         def output = gradleProcess.text
 
@@ -52,14 +54,6 @@ class ServerTaskSpec extends IntegrationSpec {
 
         where:
         jenkinsVersion << ['1.580.1', '2.64']
-    }
-
-    private static gradlew() {
-        if (System.getProperty('os.name').toLowerCase().contains('windows')) {
-            path(new File('gradlew.bat'))
-        } else {
-            path(new File('gradlew'))
-        }
     }
 
     private static String path(File file) {
