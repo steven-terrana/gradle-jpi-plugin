@@ -28,7 +28,7 @@ class DependencyAnalysis {
 
     final Configuration allLibraryDependencies
 
-    private final Attribute categoryAttribute = Attribute.of(Category.CATEGORY_ATTRIBUTE.name, String)
+    private static final Attribute CATEGORY_ATTRIBUTE = Attribute.of(Category.CATEGORY_ATTRIBUTE.name, String)
     private final List<JpiConfigurations> jpiConfigurations = []
 
     private DependencyAnalysisResult analysisResult
@@ -75,7 +75,7 @@ class DependencyAnalysis {
                 return
             }
             selected.variants.each { variant ->
-                if (variant.attributes.getAttribute(categoryAttribute) != Category.LIBRARY) {
+                if (variant.attributes.getAttribute(CATEGORY_ATTRIBUTE) != Category.LIBRARY) {
                     //skip platform dependencies
                     return
                 }

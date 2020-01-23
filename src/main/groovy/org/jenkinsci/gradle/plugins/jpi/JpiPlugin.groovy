@@ -282,7 +282,7 @@ class JpiPlugin implements Plugin<Project> {
 
         project.afterEvaluate {
             // to make sure all optional feature configurations have been setup completely
-            project.configurations.withType(Configuration) { Configuration runtimeElements ->
+            project.configurations.all { Configuration runtimeElements ->
                 if (isRuntimeVariant(runtimeElements)) {
                     Configuration runtimeElementsJenkins =
                             project.configurations.create(toFeatureSpecificConfigurationName(
