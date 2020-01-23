@@ -39,26 +39,26 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
             }
             tasks.create('runtime') {
                 doLast {
-                    configurations.runtimeClasspath.files.each { println it.name }
+                    configurations.runtimeClasspath.files.each { print "\${it.name}," }
                 }
             }
             tasks.create('compile') {
                 doLast {
-                    configurations.compileClasspath.files.each { println it.name }
+                    configurations.compileClasspath.files.each { print "\${it.name},"  }
                 }
             }
             tasks.create('jenkinsRuntime') {
                 doLast {
                     configurations.runtimeClasspathJenkins.files.findAll {
                         it.name.endsWith('.jpi') || it.name.endsWith('.hpi') || it.name.endsWith('.war')
-                    }.each { println it.name }
+                    }.each { print "\${it.name}," }
                 }
             }
             tasks.create('jenkinsTestRuntime') {
                 doLast {
                     configurations.testRuntimeClasspathJenkins.files.findAll {
                         it.name.endsWith('.jpi') || it.name.endsWith('.hpi') || it.name.startsWith('jenkins-war-')
-                    }.each { println it.name }
+                    }.each { print "\${it.name}," }
                 }
             }
             """.stripIndent()
@@ -250,7 +250,7 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
     private Set<String> resolveConsumer(String resolveTask) {
         def result = gradleRunner().withProjectDir(consumerBuild.parentFile).forwardOutput().
                 withArguments(resolveTask, '-q').build()
-        result.output.split('\n')
+        result.output.split(',').findAll { !it.isBlank() }
     }
 
     private static String path(File file) {
