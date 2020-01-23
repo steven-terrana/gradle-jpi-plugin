@@ -10,14 +10,12 @@ import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
 @CacheableRule
-class JenkinsWarRule implements ComponentMetadataRule {
+abstract class JenkinsWarRule implements ComponentMetadataRule {
 
     static final JENKINS_WAR_COORDINATES = 'org.jenkins-ci.main:jenkins-war'
 
     @Inject
-    ObjectFactory getObjects() {
-        throw new UnsupportedOperationException()
-    }
+    abstract ObjectFactory getObjects()
 
     /**
      * A Jenkins 'war' or 'war-for-test' is required on the Jenkins test classpath. This classpath expects JPI

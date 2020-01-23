@@ -9,12 +9,10 @@ import org.gradle.api.model.ObjectFactory
 import javax.inject.Inject
 
 @CacheableRule
-class JpiVariantRule implements ComponentMetadataRule {
+abstract class JpiVariantRule implements ComponentMetadataRule {
 
     @Inject
-    ObjectFactory getObjects() {
-        throw new UnsupportedOperationException()
-    }
+    abstract ObjectFactory getObjects()
 
     @Override
     void execute(ComponentMetadataContext ctx) {
