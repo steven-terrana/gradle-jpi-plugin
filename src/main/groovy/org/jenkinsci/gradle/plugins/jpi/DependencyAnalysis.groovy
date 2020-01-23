@@ -26,29 +26,38 @@ class DependencyAnalysis {
         }
     }
 
+    final Configuration allLibraryDependencies
+
     private final Attribute categoryAttribute = Attribute.of(Category.CATEGORY_ATTRIBUTE.name, String)
     private final List<JpiConfigurations> jpiConfigurations = []
 
     private DependencyAnalysisResult analysisResult
 
+    DependencyAnalysis(Project project) {
+        this.allLibraryDependencies = project.configurations.detachedConfiguration()
+        this.allLibraryDependencies.withDependencies {
+            // do the analysis when this configuration is resolved
+            analyse()
+        }
+    }
+
     void registerJpiConfigurations(Configuration consumableLibraries,
-                              Configuration consumablePlugins,
-                              Configuration resolvablePlugins) {
+                                   Configuration consumablePlugins,
+                                   Configuration resolvablePlugins) {
         jpiConfigurations.add(new JpiConfigurations(consumableLibraries, consumablePlugins, resolvablePlugins))
     }
 
-    DependencyAnalysisResult analyse(Project project) {
+    DependencyAnalysisResult analyse() {
         if (analysisResult) {
             return analysisResult
         }
 
         def manifestEntry = new StringBuilder()
-        def allLibraries = project.configurations.detachedConfiguration()
 
         jpiConfigurations.each { confs ->
-            analyseDependencies(confs, allLibraries, manifestEntry)
+            analyseDependencies(confs, allLibraryDependencies, manifestEntry)
         }
-        analysisResult = new DependencyAnalysisResult(allLibraries, manifestEntry.toString())
+        analysisResult = new DependencyAnalysisResult(manifestEntry.toString())
         analysisResult
     }
 

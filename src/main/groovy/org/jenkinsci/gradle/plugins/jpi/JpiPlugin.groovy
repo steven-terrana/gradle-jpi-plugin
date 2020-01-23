@@ -72,13 +72,15 @@ class JpiPlugin implements Plugin<Project> {
     public static final String LICENSE_TASK_NAME = 'generateLicenseInfo'
     public static final String WEB_APP_DIR = 'src/main/webapp'
 
-    DependencyAnalysis dependencyAnalysis = new DependencyAnalysis()
+    DependencyAnalysis dependencyAnalysis
 
     void apply(final Project gradleProject) {
         if (GradleVersion.current() < GradleVersion.version('6.0')) {
             throw new GradleException('This version of the JPI plugin requires Gradle 6+.' +
                     'For older Gradle versions, please use an older version of the JPI plugin.')
         }
+
+        dependencyAnalysis = new DependencyAnalysis(gradleProject)
 
         gradleProject.plugins.apply(JavaLibraryPlugin)
         gradleProject.plugins.apply(GroovyPlugin)
@@ -175,9 +177,7 @@ class JpiPlugin implements Plugin<Project> {
             def extension = jpiExtension.fileExtension
             it.archiveFileName.set(fileName)
             it.archiveExtension.set(extension)
-            it.classpath(jar, project.provider {
-                project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.analyse(project).allLibraryDependencies
-            })
+            it.classpath(jar, project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.allLibraryDependencies)
             it.from(WEB_APP_DIR)
         }
     }
@@ -186,7 +186,7 @@ class JpiPlugin implements Plugin<Project> {
         JavaPluginConvention javaConvention = project.convention.getPlugin(JavaPluginConvention)
 
         def testDependenciesTask = project.tasks.register(TestDependenciesTask.TASK_NAME, TestDependenciesTask) {
-            it.configuration = project.configurations.named(TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME)
+            it.configuration = project.configurations[TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME]
         }
 
         project.tasks.named(javaConvention.sourceSets.test.processResourcesTaskName).configure {
@@ -217,9 +217,7 @@ class JpiPlugin implements Plugin<Project> {
             it.description = 'Generates license information.'
             it.group = BasePlugin.BUILD_GROUP
             it.outputDirectory = new File(project.buildDir, 'licenses')
-            it.libraryConfiguration.set(project.provider {
-                project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.analyse(project).allLibraryDependencies
-            })
+            it.libraryConfiguration = project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.allLibraryDependencies
         }
 
         project.tasks.named(JPI_TASK_NAME).configure {

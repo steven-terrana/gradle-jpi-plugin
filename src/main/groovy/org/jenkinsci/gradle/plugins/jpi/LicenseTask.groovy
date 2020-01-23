@@ -8,7 +8,6 @@ import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
-import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
@@ -16,7 +15,7 @@ import org.gradle.api.tasks.TaskAction
 class LicenseTask extends DefaultTask {
 
     @Classpath
-    final Property<Configuration> libraryConfiguration = project.objects.property(Configuration)
+    Configuration libraryConfiguration
 
     @OutputDirectory
     File outputDirectory
@@ -74,7 +73,7 @@ class LicenseTask extends DefaultTask {
     }
 
     private Dependency[] collectDependencies() {
-        libraryConfiguration.get().resolvedConfiguration.resolvedArtifacts.findAll { ResolvedArtifact artifact ->
+        libraryConfiguration.resolvedConfiguration.resolvedArtifacts.findAll { ResolvedArtifact artifact ->
             artifact.id.componentIdentifier instanceof ModuleComponentIdentifier
         }.collect { ResolvedArtifact artifact ->
             ModuleVersionIdentifier id = artifact.moduleVersion.id

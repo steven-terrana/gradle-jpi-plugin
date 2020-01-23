@@ -2,16 +2,13 @@ package org.jenkinsci.gradle.plugins.jpi
 
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.provider.Property
-import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.Copy
 
 class TestDependenciesTask extends Copy {
     public static final String TASK_NAME = 'resolveTestDependencies'
 
-    @Classpath
-    final Property<Configuration> testRuntimePath = project.objects.property(Configuration)
+    private Configuration configuration
 
     protected Map<String, String> mapping = [:]
 
@@ -34,15 +31,20 @@ class TestDependenciesTask extends Copy {
 
     @Override
     protected void copy() {
-        testRuntimePath.get().resolvedConfiguration.resolvedArtifacts.each {
+        configuration.resolvedConfiguration.resolvedArtifacts.each {
             mapping[it.file.name] = "${it.name}.${it.extension}"
         }
 
         super.copy()
     }
 
-    void setConfiguration(Provider<Configuration> configuration) {
-        this.testRuntimePath.set(configuration)
+    void setConfiguration(Configuration configuration) {
+        this.configuration = configuration
         this.from(configuration)
+    }
+
+    @Classpath
+    Configuration getConfiguration() {
+        configuration
     }
 }
