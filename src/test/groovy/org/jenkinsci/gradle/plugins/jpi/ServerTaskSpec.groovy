@@ -9,7 +9,7 @@ class ServerTaskSpec extends IntegrationSpec {
         given:
         projectDir.newFile('settings.gradle')  << """\
             rootProject.name = "test-project"
-            includeBuild('${new File('').absolutePath}')
+            includeBuild('${path(new File(''))}')
         """
         def build = projectDir.newFile('build.gradle')
         build << """\
@@ -41,8 +41,8 @@ class ServerTaskSpec extends IntegrationSpec {
         }
 
         // run a separate process because the Jenkins shutdown kills the daemon
-        def gradleProcess = new File('./gradlew server -Djenkins.httpPort=8456 --no-daemon').
-                absolutePath.execute(null, projectDir.root)
+        def gradleProcess = "${gradlew()} server -Djenkins.httpPort=8456 --no-daemon".
+                execute(null, projectDir.root)
         def output = gradleProcess.text
 
         then:
@@ -54,4 +54,15 @@ class ServerTaskSpec extends IntegrationSpec {
         jenkinsVersion << ['1.580.1', '2.64']
     }
 
+    private static gradlew() {
+        if (System.getProperty('os.name').toLowerCase().contains('windows')) {
+            path(new File('gradlew.bat'))
+        } else {
+            path(new File('gradlew'))
+        }
+    }
+
+    private static String path(File file) {
+        file.absolutePath.replaceAll('\\\\', '/')
+    }
 }

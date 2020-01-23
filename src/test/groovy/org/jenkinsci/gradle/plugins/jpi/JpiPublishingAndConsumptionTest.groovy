@@ -23,7 +23,7 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
                 repositories {
                     maven {
                         name 'test'
-                        url '${repo.absolutePath}'
+                        url '${path(repo)}'
                     }
                 }
             }
@@ -34,7 +34,7 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
             }
             repositories {
                 maven {
-                    url '${repo.absolutePath}'
+                    url '${path(repo)}'
                 }
             }
             tasks.create('runtime') {
@@ -251,6 +251,10 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
         def result = gradleRunner().withProjectDir(consumerBuild.parentFile).forwardOutput().
                 withArguments(resolveTask, '-q').build()
         result.output.split('\n')
+    }
+
+    private static String path(File file) {
+        file.absolutePath.replaceAll('\\\\', '/')
     }
 
     private static final JENKINS_CORE_DEPS = [
