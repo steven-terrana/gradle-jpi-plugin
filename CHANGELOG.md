@@ -2,7 +2,8 @@
 
 ## 0.38.0 (2020-01-27)
 
-  * Upgrade dependency `org.jenkins-ci.main:jenkins-test-harness:2.31 -> 2.60` added to projects - [PR #133](https://github.com/jenkinsci/gradle-jpi-plugin/pull/133)
+  * upgrade dependency `org.jenkins-ci.main:jenkins-test-harness:2.31 -> 2.60` added to projects - [PR #133](https://github.com/jenkinsci/gradle-jpi-plugin/pull/133)
+  * updated to Gradle 6.1.1
 
 ## 0.37.1 (2020-01-08)
 
