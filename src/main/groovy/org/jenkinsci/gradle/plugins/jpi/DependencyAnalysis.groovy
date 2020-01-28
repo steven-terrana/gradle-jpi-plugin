@@ -8,6 +8,7 @@ import org.gradle.api.artifacts.result.DependencyResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.LibraryElements
 
 @CompileStatic
 class DependencyAnalysis {
@@ -28,7 +29,10 @@ class DependencyAnalysis {
 
     final Configuration allLibraryDependencies
 
-    private static final Attribute CATEGORY_ATTRIBUTE = Attribute.of(Category.CATEGORY_ATTRIBUTE.name, String)
+    private static final Attribute CATEGORY_ATTRIBUTE =
+            Attribute.of(Category.CATEGORY_ATTRIBUTE.name, String)
+    private static final Attribute LIBRARY_ELEMENTS_ATTRIBUTE =
+            Attribute.of(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE.name, String)
     private final List<JpiConfigurations> jpiConfigurations = []
 
     private DependencyAnalysisResult analysisResult
@@ -75,8 +79,11 @@ class DependencyAnalysis {
                 return
             }
             selected.variants.each { variant ->
-                if (variant.attributes.getAttribute(CATEGORY_ATTRIBUTE) != Category.LIBRARY) {
-                    //skip platform dependencies
+                if (variant.attributes.getAttribute(CATEGORY_ATTRIBUTE) != Category.LIBRARY
+                        || variant.attributes.getAttribute(LIBRARY_ELEMENTS_ATTRIBUTE) != JpiPlugin.JPI) {
+                    // Skip dependencies that are not libraries with JPI files.
+                    // We request these in the setup in JpiPlugin.configureConfigurations().
+                    // However, an individual dependency can override attributes, for example 'category=platform'.
                     return
                 }
 

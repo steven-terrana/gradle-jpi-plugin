@@ -58,7 +58,8 @@ abstract class JpiVariantRule implements ComponentMetadataRule {
     private addEmptyJpiVariant(ComponentMetadataContext ctx) {
         ctx.details.addVariant('jpiEmpty') {
             it.attributes {
-                it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, 'jpi'))
+                it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                        objects.named(LibraryElements, JpiPlugin.JPI))
             }
         }
         // This variant might still resolve to a jar file - https://github.com/gradle/gradle/issues/11974

@@ -27,7 +27,8 @@ abstract class JenkinsWarRule implements ComponentMetadataRule {
         def id = ctx.details.id
         ctx.details.addVariant('jenkinsTestRuntimeElements', 'runtime') {
             it.attributes {
-                it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, 'jpi'))
+                it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
+                        objects.named(LibraryElements, JpiPlugin.JPI))
             }
             it.withDependencies {
                 // Dependencies with a classifier point at JARs and can be removed

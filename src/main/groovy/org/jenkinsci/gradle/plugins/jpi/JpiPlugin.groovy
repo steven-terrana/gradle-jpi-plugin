@@ -68,6 +68,7 @@ class JpiPlugin implements Plugin<Project> {
     public static final String TEST_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME = 'testRuntimeClasspathJenkins'
     public static final String SERVER_JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME = 'serverRuntimeClasspathJenkins'
 
+    public static final String JPI = 'jpi'
     public static final String JPI_TASK_NAME = 'jpi'
     public static final String LICENSE_TASK_NAME = 'generateLicenseInfo'
     public static final String WEB_APP_DIR = 'src/main/webapp'
@@ -298,7 +299,7 @@ class JpiPlugin implements Plugin<Project> {
                         it.attribute(Bundling.BUNDLING_ATTRIBUTE,
                                 project.objects.named(Bundling, Bundling.EXTERNAL))
                         it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                                project.objects.named(LibraryElements, 'jpi'))
+                                project.objects.named(LibraryElements, JPI))
                         it.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE,
                                 javaConvention.targetCompatibility.majorVersion.toInteger())
                     }
@@ -318,7 +319,7 @@ class JpiPlugin implements Plugin<Project> {
                         it.attribute(Category.CATEGORY_ATTRIBUTE,
                                 project.objects.named(Category, Category.LIBRARY))
                         it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                                project.objects.named(LibraryElements, 'jpi'))
+                                project.objects.named(LibraryElements, JPI))
                     }
 
                     component.addVariantsFromConfiguration(runtimeElementsJenkins) {
@@ -346,7 +347,7 @@ class JpiPlugin implements Plugin<Project> {
             it.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
             it.attribute(Category.CATEGORY_ATTRIBUTE, project.objects.named(Category, Category.LIBRARY))
             it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                    project.objects.named(LibraryElements, 'jpi'))
+                    project.objects.named(LibraryElements, JPI))
         }
         extendsFrom.each {
             testRuntimeClasspathJenkins.extendsFrom(project.configurations[it])
