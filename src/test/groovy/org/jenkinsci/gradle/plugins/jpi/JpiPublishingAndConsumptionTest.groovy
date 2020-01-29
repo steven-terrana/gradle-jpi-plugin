@@ -1,5 +1,7 @@
 package org.jenkinsci.gradle.plugins.jpi
 
+import java.util.jar.JarInputStream
+
 class JpiPublishingAndConsumptionTest extends IntegrationSpec {
     private File producerBuild
     private File consumerBuild
@@ -218,6 +220,8 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
                 'jsr305-1.3.9.jar'] as Set
         resolveConsumer('jenkinsRuntime') == [ 'producer-1.0.hpi', 'credentials-1.9.4.hpi' ] as Set
         resolveConsumer('jenkinsTestRuntime') == [ 'producer-1.0.hpi', 'credentials-1.9.4.hpi' ] as Set
+
+        consumerManifestEntry('Plugin-Dependencies') == 'producer:1.0,credentials:1.9.4'
     }
 
     def 'has Jenkins core dependencies if a Jenkins version is configured'() {
@@ -251,6 +255,16 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
         def result = gradleRunner().withProjectDir(consumerBuild.parentFile).forwardOutput().
                 withArguments(resolveTask, '-q').build()
         result.output.split(',').findAll { !it.isBlank() }
+    }
+
+    private String consumerManifestEntry(String key) {
+        def consumerJpi = new File(consumerBuild.parentFile, 'build/libs/consumer.hpi')
+        if (!consumerJpi.exists()) {
+            gradleRunner().withProjectDir(consumerBuild.parentFile).forwardOutput().
+                    withArguments('jpi').build()
+        }
+        new JarInputStream(consumerJpi.newInputStream()).manifest
+                .mainAttributes.find { it.key.toString() == key }.value.toString()
     }
 
     private static String path(File file) {

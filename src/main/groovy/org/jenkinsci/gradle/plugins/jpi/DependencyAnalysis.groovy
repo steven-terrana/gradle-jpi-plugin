@@ -4,8 +4,11 @@ import groovy.transform.CompileStatic
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.ModuleDependency
+import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.result.DependencyResult
+import org.gradle.api.artifacts.result.ResolvedComponentResult
 import org.gradle.api.artifacts.result.ResolvedDependencyResult
+import org.gradle.api.artifacts.result.ResolvedVariantResult
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.LibraryElements
@@ -69,16 +72,10 @@ class DependencyAnalysis {
                                 Configuration allLibraries, StringBuilder manifestEntry) {
         def optional = configurations.resolvablePlugins.name != JpiPlugin.JENKINS_RUNTIME_CLASSPATH_CONFIGURATION_NAME
 
+        List<ModuleVersionIdentifier> processedComponents = []
         configurations.resolvablePlugins.incoming.resolutionResult.root.dependencies.each { DependencyResult result ->
-            if (result.constraint || !(result instanceof ResolvedDependencyResult)) {
-                return
-            }
-            def selected = ((ResolvedDependencyResult) result).selected
-            def moduleVersion = selected.moduleVersion
-            if (moduleVersion == null) {
-                return
-            }
-            selected.variants.each { variant ->
+            def selected = getSelectedComponent(result, processedComponents)
+            selected?.variants?.each { variant ->
                 if (variant.attributes.getAttribute(CATEGORY_ATTRIBUTE) != Category.LIBRARY
                         || variant.attributes.getAttribute(LIBRARY_ELEMENTS_ATTRIBUTE) != JpiPlugin.JPI) {
                     // Skip dependencies that are not libraries with JPI files.
@@ -87,14 +84,15 @@ class DependencyAnalysis {
                     return
                 }
 
-                if (manifestEntry.length() > 0) {
-                    manifestEntry.append(',')
-                }
-                manifestEntry.append(moduleVersion.name)
-                manifestEntry.append(':')
-                manifestEntry.append(moduleVersion.version)
-                if (optional) {
-                    manifestEntry.append(';resolution:=optional')
+                def moduleVersion = selected.moduleVersion
+                if (isMainFeature(moduleVersion, variant)) {
+                    addToManifestEntry(manifestEntry, selected, optional)
+                } else {
+                    selected.getDependenciesForVariant(variant).each { featureDependency ->
+                        // add dependencies of the selected optional feature
+                        addToManifestEntry(manifestEntry,
+                                getSelectedComponent(featureDependency, processedComponents), optional)
+                    }
                 }
 
                 def moduleDependencies = configurations.resolvablePlugins.allDependencies.findAll {
@@ -105,5 +103,44 @@ class DependencyAnalysis {
         }
         allLibraries.dependencies.addAll(configurations.consumableLibraries.allDependencies
                 - configurations.consumablePlugins.allDependencies)
+    }
+
+    private static ResolvedComponentResult getSelectedComponent(DependencyResult dependency,
+                                                                List<ModuleVersionIdentifier> processedComponents) {
+        if (dependency.constraint || !(dependency instanceof ResolvedDependencyResult)) {
+            return null
+        }
+        def selected = ((ResolvedDependencyResult) dependency).selected
+        def moduleVersion = selected.moduleVersion
+        if (moduleVersion == null || processedComponents.contains(moduleVersion)) {
+            // If feature variants are used, it is common to have multiple dependencies to the same component.
+            // These then turn up in the result multiple times.
+            return null
+        }
+        processedComponents.add(moduleVersion)
+        selected
+    }
+
+    static boolean isMainFeature(ModuleVersionIdentifier component, ResolvedVariantResult variant) {
+        // either no capability definition of main capability is explicitly defined
+        variant.capabilities.isEmpty() || variant.capabilities.any {
+            it.group == component.group && it.name == component.name
+        }
+    }
+
+    private static void addToManifestEntry(StringBuilder manifestEntry,
+                                           ResolvedComponentResult selected,
+                                           boolean optional) {
+        if (selected) {
+            if (manifestEntry.length() > 0) {
+                manifestEntry.append(',')
+            }
+            manifestEntry.append(selected.moduleVersion.name)
+            manifestEntry.append(':')
+            manifestEntry.append(selected.moduleVersion.version)
+            if (optional) {
+                manifestEntry.append(';resolution:=optional')
+            }
+        }
     }
 }
