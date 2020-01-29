@@ -3,6 +3,12 @@
 This is a Gradle plugin for building [Jenkins](http://jenkins-ci.org)
 plugins, written in Groovy or Java.
 
+## Compatibility with Gradle versions
+
+The latest version of the JPI plugin requires **Gradle 6+** to make use of advanced dependency management features.
+
+For Gradle versions 4.x or 5.x, please use version `0.38.0` of the JPI plugin.
+
 ## Configuration
 
 Add the following to your build.gradle:
