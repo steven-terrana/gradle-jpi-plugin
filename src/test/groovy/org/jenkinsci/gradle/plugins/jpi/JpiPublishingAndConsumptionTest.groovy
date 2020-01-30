@@ -1,5 +1,6 @@
 package org.jenkinsci.gradle.plugins.jpi
 
+import java.util.jar.JarEntry
 import java.util.jar.JarInputStream
 
 class JpiPublishingAndConsumptionTest extends IntegrationSpec {
@@ -182,7 +183,10 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
                 }
             }
             dependencies {
+                implementation 'org.jenkins-ci.plugins:ant:1.2'
+                implementation 'org.apache.commons:commons-lang3:3.9'
                 credentialsImplementation 'org.jenkins-ci.plugins:credentials:1.9.4'
+                credentialsImplementation 'org.apache.commons:commons-collections4:4.4'
             }
             """.stripIndent()
         publishProducer()
@@ -196,14 +200,16 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
 
         then:
         resolveConsumer('compile') == [ 'producer-1.0.jar' ] as Set
-        resolveConsumer('runtime') == [ 'producer-1.0.jar' ] as Set
-        resolveConsumer('jenkinsRuntime') == [ 'producer-1.0.hpi' ] as Set
-        resolveConsumer('jenkinsTestRuntime') == [ 'producer-1.0.hpi' ] as Set
+        resolveConsumer('runtime') == [
+                'producer-1.0.jar',
+                'ant-1.2.jar',
+                'commons-lang3-3.9.jar' ] as Set
+        resolveConsumer('jenkinsRuntime') == [ 'producer-1.0.hpi', 'ant-1.2.hpi' ] as Set
+        resolveConsumer('jenkinsTestRuntime') == [ 'producer-1.0.hpi', 'ant-1.2.hpi' ] as Set
 
         when:
         consumerBuild << """
             dependencies {
-                implementation 'org:producer:1.0'
                 implementation('org:producer:1.0') {
                     capabilities { requireCapability('org:producer-credentials') }
                 }
@@ -214,14 +220,26 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
         resolveConsumer('compile') == [ 'producer-1.0.jar' ] as Set
         resolveConsumer('runtime') == [
                 'producer-1.0.jar',
+                'ant-1.2.jar',
+                'commons-lang3-3.9.jar',
+                'commons-collections4-4.4.jar',
                 'credentials-1.9.4.jar',
                 'jcip-annotations-1.0.jar',
                 'findbugs-annotations-1.3.9-1.jar',
-                'jsr305-1.3.9.jar'] as Set
-        resolveConsumer('jenkinsRuntime') == [ 'producer-1.0.hpi', 'credentials-1.9.4.hpi' ] as Set
-        resolveConsumer('jenkinsTestRuntime') == [ 'producer-1.0.hpi', 'credentials-1.9.4.hpi' ] as Set
+                'jsr305-1.3.9.jar' ] as Set
+        resolveConsumer('jenkinsRuntime') ==
+                [ 'producer-1.0.hpi', 'ant-1.2.hpi', 'credentials-1.9.4.hpi' ] as Set
+        resolveConsumer('jenkinsTestRuntime') ==
+                [ 'producer-1.0.hpi', 'ant-1.2.hpi', 'credentials-1.9.4.hpi' ] as Set
 
-        consumerManifestEntry('Plugin-Dependencies') == 'producer:1.0,credentials:1.9.4'
+        manifestEntry('consumer', 'Plugin-Dependencies') ==
+                'producer:1.0,credentials:1.9.4'
+        manifestEntry('producer', 'Plugin-Dependencies') ==
+                'credentials:1.9.4;resolution:=optional,ant:1.2'
+        packagedJars('consumer') ==
+                [ 'consumer.jar' ] as Set
+        packagedJars('producer') ==
+                [ 'producer-1.0.jar', 'commons-lang3-3.9.jar', 'commons-collections4-4.4.jar' ] as Set
     }
 
     def 'has Jenkins core dependencies if a Jenkins version is configured'() {
@@ -257,14 +275,32 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
         result.output.split(',').findAll { !it.isBlank() }
     }
 
-    private String consumerManifestEntry(String key) {
-        def consumerJpi = new File(consumerBuild.parentFile, 'build/libs/consumer.hpi')
-        if (!consumerJpi.exists()) {
-            gradleRunner().withProjectDir(consumerBuild.parentFile).forwardOutput().
+    private String manifestEntry(String jpiName, String key) {
+        new JarInputStream(jpi(jpiName).newInputStream()).manifest
+                .mainAttributes.find { it.key.toString() == key }.value.toString()
+    }
+
+    private Set<String> packagedJars(String jpiName) {
+        def jpi = new JarInputStream(jpi(jpiName).newInputStream())
+        Set<String> jars = []
+        JarEntry entry
+        while ((entry = jpi.nextJarEntry) != null) {
+            def path = entry.name
+            if (path.endsWith('.jar')) {
+                jars.add(path.split('/')[2])
+            }
+        }
+        jars
+    }
+
+    private File jpi(String name) {
+        def buildRoot = new File(projectDir.root, name)
+        def jpi = new File(buildRoot, "build/libs/${name}.hpi")
+        if (!jpi.exists()) {
+            gradleRunner().withProjectDir(buildRoot).forwardOutput().
                     withArguments('jpi').build()
         }
-        new JarInputStream(consumerJpi.newInputStream()).manifest
-                .mainAttributes.find { it.key.toString() == key }.value.toString()
+        jpi
     }
 
     private static String path(File file) {
