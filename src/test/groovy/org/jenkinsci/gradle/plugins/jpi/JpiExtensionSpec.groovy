@@ -229,27 +229,10 @@ class JpiExtensionSpec extends Specification {
         }
 
         then:
-        def dependencies = collectDependencies(project, 'jenkinsCore')
+        def dependencies = collectDependencies(project, 'compileOnly')
         'org.jenkins-ci.main:jenkins-core:1.509.3' in dependencies
         'javax.servlet:servlet-api:2.4' in dependencies
         'findbugs:annotations:1.0.0' in dependencies
-    }
-
-    def 'jenkinsWar dependencies'() {
-        setup:
-        Project project = ProjectBuilder.builder().build()
-
-        when:
-        project.with {
-            apply plugin: 'jpi'
-            jenkinsPlugin {
-                coreVersion = '1.509.3'
-            }
-        }
-
-        then:
-        def dependencies = collectDependencies(project, 'jenkinsWar')
-        'org.jenkins-ci.main:jenkins-war:1.509.3' in dependencies
     }
 
     def 'jenkinsTest dependencies before 1.505'() {
@@ -265,11 +248,12 @@ class JpiExtensionSpec extends Specification {
         }
 
         then:
-        def dependencies = collectDependencies(project, 'jenkinsTest')
-        'org.jenkins-ci.main:jenkins-test-harness:1.504' in dependencies
-        'org.jenkins-ci.main:ui-samples-plugin:1.504' in dependencies
-        'org.jenkins-ci.main:jenkins-war:1.504' in dependencies
-        'junit:junit-dep:4.10' in dependencies
+        def dependenciesCompileTime = collectDependencies(project, 'testImplementation')
+        def dependenciesRuntime = collectDependencies(project, 'testRuntimeOnly')
+        'org.jenkins-ci.main:jenkins-test-harness:1.504' in dependenciesCompileTime
+        'org.jenkins-ci.main:ui-samples-plugin:1.504' in dependenciesCompileTime
+        'org.jenkins-ci.main:jenkins-war:1.504' in dependenciesRuntime
+        'junit:junit-dep:4.10' in dependenciesCompileTime
     }
 
     def 'jenkinsTest dependencies before 1.533'() {
@@ -285,10 +269,11 @@ class JpiExtensionSpec extends Specification {
         }
 
         then:
-        def dependencies = collectDependencies(project, 'jenkinsTest')
-        'org.jenkins-ci.main:jenkins-test-harness:1.532' in dependencies
-        'org.jenkins-ci.main:ui-samples-plugin:1.532' in dependencies
-        'org.jenkins-ci.main:jenkins-war:1.532' in dependencies
+        def dependenciesCompileTime = collectDependencies(project, 'testImplementation')
+        def dependenciesRuntime = collectDependencies(project, 'testRuntimeOnly')
+        'org.jenkins-ci.main:jenkins-test-harness:1.532' in dependenciesCompileTime
+        'org.jenkins-ci.main:ui-samples-plugin:1.532' in dependenciesCompileTime
+        'org.jenkins-ci.main:jenkins-war:1.532' in dependenciesRuntime
     }
 
     def 'jenkinsTest dependencies for 1.533 or later'() {
@@ -304,10 +289,11 @@ class JpiExtensionSpec extends Specification {
         }
 
         then:
-        def dependencies = collectDependencies(project, 'jenkinsTest')
-        'org.jenkins-ci.main:jenkins-test-harness:1.533' in dependencies
-        'org.jenkins-ci.main:ui-samples-plugin:2.0' in dependencies
-        'org.jenkins-ci.main:jenkins-war:1.533' in dependencies
+        def dependenciesCompileTime = collectDependencies(project, 'testImplementation')
+        def dependenciesRuntime = collectDependencies(project, 'testRuntimeOnly')
+        'org.jenkins-ci.main:jenkins-test-harness:1.533' in dependenciesCompileTime
+        'org.jenkins-ci.main:ui-samples-plugin:2.0' in dependenciesCompileTime
+        'org.jenkins-ci.main:jenkins-war:1.533' in dependenciesRuntime
     }
 
     def 'jenkinsTest dependencies for 1.645 or later'() {
@@ -323,10 +309,11 @@ class JpiExtensionSpec extends Specification {
         }
 
         then:
-        def dependencies = collectDependencies(project, 'jenkinsTest')
-        'org.jenkins-ci.main:jenkins-test-harness:2.0' in dependencies
-        'org.jenkins-ci.main:ui-samples-plugin:2.0' in dependencies
-        'org.jenkins-ci.main:jenkins-war:1.645' in dependencies
+        def dependenciesCompileTime = collectDependencies(project, 'testImplementation')
+        def dependenciesRuntime = collectDependencies(project, 'testRuntimeOnly')
+        'org.jenkins-ci.main:jenkins-test-harness:2.0' in dependenciesCompileTime
+        'org.jenkins-ci.main:ui-samples-plugin:2.0' in dependenciesCompileTime
+        'org.jenkins-ci.main:jenkins-war:1.645' in dependenciesRuntime
     }
 
     def 'jenkinsTest dependencies for 2.64 or later'() {
@@ -342,10 +329,9 @@ class JpiExtensionSpec extends Specification {
         }
 
         then:
-        def dependencies = collectDependencies(project, 'jenkinsTest')
-        'org.jenkins-ci.main:jenkins-test-harness:2.60' in dependencies
-        'org.jenkins-ci.main:ui-samples-plugin:2.0' in dependencies
-        project.configurations.jenkinsWar in project.configurations.jenkinsTest.extendsFrom
+        def dependenciesCompileTime = collectDependencies(project, 'testImplementation')
+        'org.jenkins-ci.main:jenkins-test-harness:2.60' in dependenciesCompileTime
+        'org.jenkins-ci.main:ui-samples-plugin:2.0' in dependenciesCompileTime
     }
 
     private static collectDependencies(Project project, String configuration) {

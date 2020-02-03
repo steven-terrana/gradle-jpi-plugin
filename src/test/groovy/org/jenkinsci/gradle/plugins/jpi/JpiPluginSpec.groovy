@@ -7,7 +7,6 @@ import org.gradle.api.artifacts.repositories.MavenArtifactRepository
 import org.gradle.api.internal.project.ProjectInternal
 import org.gradle.api.plugins.BasePlugin
 import org.gradle.api.plugins.JavaPluginConvention
-import org.gradle.api.plugins.WarPlugin
 import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.testfixtures.ProjectBuilder
@@ -90,11 +89,6 @@ class JpiPluginSpec extends Specification {
         (project as ProjectInternal).evaluate()
 
         then:
-        Task warTask = project.tasks[WarPlugin.WAR_TASK_NAME]
-        warTask != null
-        warTask.description != null
-        warTask.group == BasePlugin.BUILD_GROUP
-
         Task jpiTask = project.tasks[JpiPlugin.JPI_TASK_NAME]
         jpiTask != null
         jpiTask.description != null

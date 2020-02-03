@@ -1,5 +1,6 @@
 package org.jenkinsci.gradle.plugins.jpi
 
+import groovy.json.JsonSlurper
 import org.junit.rules.TemporaryFolder
 import org.xmlunit.builder.DiffBuilder
 import org.xmlunit.builder.Input
@@ -15,6 +16,12 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
         build << """\
             plugins {
                 id 'org.jenkins-ci.jpi'
+            }
+            group = 'org'
+            version '1.0'
+            java {
+                sourceCompatibility = JavaVersion.VERSION_1_8
+                targetCompatibility = JavaVersion.VERSION_1_8
             }
             """.stripIndent()
     }
@@ -32,6 +39,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
         then:
         compareXml('minimal-pom.xml', actualPomIn(projectDir))
+        compareJson('minimal-module.json', actualModuleIn(projectDir))
     }
 
     def 'minimal POM with other publication logic setting the name'() {
@@ -53,6 +61,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
         then:
         compareXml('minimal-pom.xml', actualPomIn(projectDir))
+        compareJson('minimal-module.json', actualModuleIn(projectDir))
     }
 
     def 'POM with other publication logic setting the description'() {
@@ -74,6 +83,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
         generatePom()
         then:
         compareXml('minimal-pom-with-description.xml', actualPomIn(projectDir))
+        compareJson('minimal-module.json', actualModuleIn(projectDir))
     }
 
     def 'POM with all metadata'() {
@@ -113,6 +123,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
         then:
         compareXml('complex-pom.xml', actualPomIn(projectDir))
+        compareJson('minimal-module.json', actualModuleIn(projectDir))
     }
 
     def 'gitHubUrl not pointing to GitHub'() {
@@ -129,6 +140,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
         then:
         compareXml('bitbucket-pom.xml', actualPomIn(projectDir))
+        compareJson('minimal-module.json', actualModuleIn(projectDir))
     }
 
     def 'mavenLocal is ignored'() {
@@ -147,6 +159,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
         then:
         compareXml('minimal-pom.xml', actualPomIn(projectDir))
+        compareJson('minimal-module.json', actualModuleIn(projectDir))
     }
 
     def 'mavenCentral is ignored'() {
@@ -165,6 +178,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
         then:
         compareXml('minimal-pom.xml', actualPomIn(projectDir))
+        compareJson('minimal-module.json', actualModuleIn(projectDir))
     }
 
     def 'plugin dependencies'() {
@@ -174,7 +188,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 coreVersion = '1.580.1'
             }
             dependencies {
-                jenkinsPlugins 'org.jenkins-ci.plugins:credentials:1.9.4'
+                api 'org.jenkins-ci.plugins:credentials:1.9.4'
             }
             """.stripIndent()
 
@@ -183,6 +197,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
         then:
         compareXml('plugin-dependencies-pom.xml', actualPomIn(projectDir))
+        compareJson('plugin-dependencies-module.json', actualModuleIn(projectDir))
     }
 
     def 'plugin with dynamic dependency - 1.9.+'() {
@@ -192,7 +207,23 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 coreVersion = '1.580.1'
             }
             dependencies {
-                jenkinsPlugins 'org.jenkins-ci.plugins:credentials:1.9.+'
+                api 'org.jenkins-ci.plugins:credentials:1.9.+'
+            }
+
+            apply plugin: 'maven-publish'
+            publishing {
+                publications {
+                    mavenJpi(MavenPublication) {
+                        versionMapping {
+                            usage('java-api') {
+                                fromResolutionResult()
+                            }
+                            usage('java-runtime') {
+                                fromResolutionResult()
+                            }
+                        }
+                    }
+                }
             }
             """.stripIndent()
 
@@ -201,6 +232,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
         then:
         compareXml('plugin-dependencies-pom.xml', actualPomIn(projectDir))
+        compareJson('plugin-dependencies-module.json', actualModuleIn(projectDir))
     }
 
     def 'plugin with dynamic dependency - latest.release'() {
@@ -210,7 +242,22 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 coreVersion = '1.580.1'
             }
             dependencies {
-                jenkinsPlugins 'org.jenkins-ci.plugins:credentials:latest.release'
+                api 'org.jenkins-ci.plugins:credentials:latest.release'
+            }
+            apply plugin: 'maven-publish'
+            publishing {
+                publications {
+                    mavenJpi(MavenPublication) {
+                        versionMapping {
+                            usage('java-api') {
+                                fromResolutionResult()
+                            }
+                            usage('java-runtime') {
+                                fromResolutionResult()
+                            }
+                        }
+                    }
+                }
             }
             """.stripIndent()
 
@@ -218,7 +265,8 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
         generatePom()
 
         then:
-        !actualPomIn(projectDir).text.contains('latest.release')
+        !actualPomIn(projectDir).text.contains('<version>RELEASE</version>')
+        !actualModuleIn(projectDir).text.contains('latest.release')
     }
 
     def 'optional plugin dependencies'() {
@@ -227,8 +275,13 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
             jenkinsPlugin {
                 coreVersion = '1.580.1'
             }
+            java {
+                registerFeature('credentials') {
+                    usingSourceSet(sourceSets.main)
+                }
+            }
             dependencies {
-                optionalJenkinsPlugins 'org.jenkins-ci.plugins:credentials:1.9.4'
+                credentialsApi 'org.jenkins-ci.plugins:credentials:1.9.4'
             }
             """.stripIndent()
 
@@ -237,6 +290,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
         then:
         compareXml('optional-plugin-dependencies-pom.xml', actualPomIn(projectDir))
+        compareJson('optional-plugin-dependencies-module.json', actualModuleIn(projectDir))
     }
 
     def 'compile dependencies'() {
@@ -246,7 +300,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 coreVersion = '1.580.1'
             }
             dependencies {
-                compile 'javax.ejb:ejb:2.1'
+                api 'org.apache.commons:commons-lang3:3.9'
             }
             """.stripIndent()
 
@@ -255,6 +309,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
         then:
         compareXml('compile-dependencies-pom.xml', actualPomIn(projectDir))
+        compareJson('compile-dependencies-module.json', actualModuleIn(projectDir))
     }
 
     def 'compile dependencies with excludes'() {
@@ -264,7 +319,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 coreVersion = '1.580.1'
             }
             dependencies {
-                compile('org.bitbucket.b_c:jose4j:0.5.5') {
+                api('org.bitbucket.b_c:jose4j:0.5.5') {
                     exclude group: 'org.slf4j', module: 'slf4j-api'
                 }
             }
@@ -275,40 +330,11 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
         then:
         compareXml('compile-dependencies-with-excludes-pom.xml', actualPomIn(projectDir))
-    }
-
-    def 'updated FindBugs version in 1.618'() {
-        setup:
-        build << """\
-            jenkinsPlugin {
-                coreVersion = '1.618'
-            }
-            """.stripIndent()
-
-        when:
-        generatePom()
-
-        then:
-        compareXml('updated-findbugs-pom.xml', actualPomIn(projectDir))
-    }
-
-    def 'updated Servlet API version in 2.0'() {
-        setup:
-        build << """\
-            jenkinsPlugin {
-                coreVersion = '2.0'
-            }
-            """.stripIndent()
-
-        when:
-        generatePom()
-
-        then:
-        compareXml('updated-servlet-api-pom.xml', actualPomIn(projectDir))
+        compareJson('compile-dependencies-with-excludes-module.json', actualModuleIn(projectDir))
     }
 
     private static boolean compareXml(String fileName, File actual) {
-        !DiffBuilder.compare(Input.fromString(readXml(fileName)))
+        !DiffBuilder.compare(Input.fromString(readResource(fileName)))
                 .withTest(Input.fromString(toXml(new XmlParser().parse(actual))))
                 .checkForSimilar()
                 .ignoreWhitespace()
@@ -316,7 +342,25 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
                 .hasDifferences()
     }
 
-    private static String readXml(String fileName) {
+    private static boolean compareJson(String fileName, File actual) {
+        def actualJson = removeChangingDetails(new JsonSlurper().parseText(actual.text))
+        def expectedJson = new JsonSlurper().parseText(readResource(fileName))
+        assert actualJson == expectedJson
+        actualJson == expectedJson
+    }
+
+    static removeChangingDetails(moduleRoot) {
+        moduleRoot.createdBy.gradle.version = ''
+        moduleRoot.createdBy.gradle.buildId = ''
+        moduleRoot.variants.each { it.files.each { it.size = '' } }
+        moduleRoot.variants.each { it.files.each { it.sha512 = '' } }
+        moduleRoot.variants.each { it.files.each { it.sha256 = '' } }
+        moduleRoot.variants.each { it.files.each { it.sha1 = '' } }
+        moduleRoot.variants.each { it.files.each { it.md5 = '' } }
+        moduleRoot
+    }
+
+    private static String readResource(String fileName) {
         JpiPomCustomizerIntegrationSpec.getResourceAsStream(fileName).text
     }
 
@@ -328,7 +372,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
 
     void generatePom() {
         gradleRunner()
-        .withArguments('generatePomFileForMavenJpiPublication')
+        .withArguments('generatePomFileForMavenJpiPublication', 'generateMetadataFileForMavenJpiPublication', '-s')
                 .build()
     }
 
@@ -336,4 +380,7 @@ class JpiPomCustomizerIntegrationSpec extends IntegrationSpec {
         new File(projectDir.root, 'build/publications/mavenJpi/pom-default.xml')
     }
 
+    static File actualModuleIn(TemporaryFolder projectDir) {
+        new File(projectDir.root, 'build/publications/mavenJpi/module.json')
+    }
 }

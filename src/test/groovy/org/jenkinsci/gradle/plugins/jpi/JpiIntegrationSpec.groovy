@@ -115,6 +115,7 @@ class JpiIntegrationSpec extends IntegrationSpec {
             repositories { mavenCentral() }
             dependencies {
                 implementation 'junit:junit:4.12'
+                api 'org.jenkins-ci.plugins:credentials:1.9.4'
             }
             '''.stripIndent()
 
@@ -140,6 +141,7 @@ class JpiIntegrationSpec extends IntegrationSpec {
         !hpiEntries.contains('WEB-INF/classes/')
         hpiEntries.contains(jarPathInHpi)
         hpiEntries.contains('WEB-INF/lib/junit-4.12.jar')
+        !hpiEntries.contains('WEB-INF/lib/credentials-1.9.4.jar')
 
         def generatedJar = new File(projectDir.root, "${projectName}-${projectVersion}.jar")
         Files.copy(hpiFile.getInputStream(hpiFile.getEntry(jarPathInHpi)), generatedJar.toPath())
@@ -162,13 +164,12 @@ class JpiIntegrationSpec extends IntegrationSpec {
         where:
         task                                         | dependency                                    | outcome
         'jar'                                        | ':configureManifest'                          | TaskOutcome.SUCCESS
-        'war'                                        | ':configureManifest'                          | TaskOutcome.SUCCESS
+        'jpi'                                        | ':configureManifest'                          | TaskOutcome.SUCCESS
         'processTestResources'                       | ':resolveTestDependencies'                    | TaskOutcome.NO_SOURCE
-        'jpi'                                        | ':war'                                        | TaskOutcome.SUCCESS
         'compileTestJava'                            | ':insertTest'                                 | TaskOutcome.SKIPPED
         'testClasses'                                | ':generate-test-hpl'                          | TaskOutcome.SUCCESS
         'compileJava'                                | ':localizer'                                  | TaskOutcome.SUCCESS
-        'generateMetadataFileForMavenJpiPublication' | ':generateMetadataFileForMavenJpiPublication' | TaskOutcome.SKIPPED
+        'generateMetadataFileForMavenJpiPublication' | ':generateMetadataFileForMavenJpiPublication' | TaskOutcome.SUCCESS
     }
 
     @Unroll

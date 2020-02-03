@@ -212,7 +212,7 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
         given:
         build << """\
             dependencies {
-                jenkinsPlugins 'org.jenkins-ci.plugins:ant:1.2'
+                api 'org.jenkins-ci.plugins:ant:1.2'
             }
             """.stripIndent()
 
@@ -227,8 +227,8 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
         given:
         build << """\
             dependencies {
-                jenkinsPlugins 'org.jenkinsci.plugins:git:1.1.15'
-                jenkinsPlugins 'org.jenkins-ci.plugins:ant:1.2'
+                api 'org.jenkinsci.plugins:git:1.1.15'
+                implementation 'org.jenkins-ci.plugins:ant:1.2'
             }
             """.stripIndent()
 
@@ -242,8 +242,13 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
     def 'should populate Plugin-Dependencies with expected format for sole optional dependency'() {
         given:
         build << """\
+            java {
+                registerFeature('ant') {
+                    usingSourceSet(sourceSets.main)
+                }
+            }
             dependencies {
-                optionalJenkinsPlugins 'org.jenkins-ci.plugins:ant:1.2'
+                antApi 'org.jenkins-ci.plugins:ant:1.2'
             }
             """.stripIndent()
 
@@ -257,9 +262,17 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
     def 'should populate Plugin-Dependencies with expected ordered format for multiple optional dependencies'() {
         given:
         build << """\
+            java {
+                registerFeature('git') {
+                    usingSourceSet(sourceSets.main)
+                }
+                registerFeature('ant') {
+                    usingSourceSet(sourceSets.main)
+                }
+            }
             dependencies {
-                optionalJenkinsPlugins 'org.jenkinsci.plugins:git:1.1.15'
-                optionalJenkinsPlugins 'org.jenkins-ci.plugins:ant:1.2'
+                gitApi 'org.jenkinsci.plugins:git:1.1.15'
+                antImplementation 'org.jenkins-ci.plugins:ant:1.2'
             }
             """.stripIndent()
 
@@ -267,17 +280,25 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
         def actual = generateManifestThroughGradle()
 
         then:
-        actual['Plugin-Dependencies'] == 'git:1.1.15;resolution:=optional,ant:1.2;resolution:=optional'
+        actual['Plugin-Dependencies'] == 'ant:1.2;resolution:=optional,git:1.1.15;resolution:=optional'
     }
 
     def 'should populate Plugin-Dependencies with expected ordered format for multiple dependencies'() {
         given:
         build << """\
+            java {
+                registerFeature('folder') {
+                    usingSourceSet(sourceSets.main)
+                }
+                registerFeature('credentials') {
+                    usingSourceSet(sourceSets.main)
+                }
+            }
             dependencies {
-                optionalJenkinsPlugins 'org.jenkins-ci.plugins:cloudbees-folder:4.2'
-                jenkinsPlugins 'org.jenkinsci.plugins:git:1.1.15'
-                jenkinsPlugins 'org.jenkins-ci.plugins:ant:1.2'
-                optionalJenkinsPlugins 'org.jenkins-ci.plugins:credentials:1.9.4'
+                folderApi 'org.jenkins-ci.plugins:cloudbees-folder:4.2'
+                api 'org.jenkinsci.plugins:git:1.1.15'
+                implementation 'org.jenkins-ci.plugins:ant:1.2'
+                credentialsImplementation 'org.jenkins-ci.plugins:credentials:1.9.4'
             }
             """.stripIndent()
 
@@ -285,30 +306,20 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
         def actual = generateManifestThroughGradle()
 
         then:
-        actual['Plugin-Dependencies'] == 'git:1.1.15,' +
-                'ant:1.2,' +
+        actual['Plugin-Dependencies'] ==
+                'credentials:1.9.4;resolution:=optional,' +
                 'cloudbees-folder:4.2;resolution:=optional,' +
-                'credentials:1.9.4;resolution:=optional'
+                'git:1.1.15,' +
+                'ant:1.2'
     }
 
     @Requires({ IntegrationSpec.gradleVersionForTest >= GradleVersion.version('5.3') })
     def 'can use bom to manage plugin dependencies'() {
         given:
         build << """\
-            configurations {
-                jenkinsBom
-                compileClasspath.extendsFrom(jenkinsBom)
-                runtimeClasspath.extendsFrom(jenkinsBom)
-                jenkinsPlugins.extendsFrom(jenkinsBom)
-                optionalJenkinsPlugins.extendsFrom(jenkinsBom)
-                jenkinsServer.extendsFrom(jenkinsBom)
-                jenkinsWar.extendsFrom(jenkinsBom)
-                jenkinsTest.extendsFrom(jenkinsBom)
-                pluginResources.extendsFrom(jenkinsBom)
-            }
             dependencies {
-                jenkinsBom platform("io.jenkins.tools.bom:bom-2.138.x:4")
-                jenkinsPlugins 'org.jenkins-ci.plugins.workflow:workflow-api'
+                api platform("io.jenkins.tools.bom:bom-2.138.x:4")
+                implementation 'org.jenkins-ci.plugins.workflow:workflow-api'
             }
         """
 

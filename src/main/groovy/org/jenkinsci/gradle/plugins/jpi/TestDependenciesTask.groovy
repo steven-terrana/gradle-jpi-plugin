@@ -31,7 +31,7 @@ class TestDependenciesTask extends Copy {
 
     @Override
     protected void copy() {
-        getConfiguration().resolvedConfiguration.resolvedArtifacts.each {
+        configuration.resolvedConfiguration.resolvedArtifacts.each {
             mapping[it.file.name] = "${it.name}.${it.extension}"
         }
 

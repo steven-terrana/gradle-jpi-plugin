@@ -103,14 +103,10 @@ tasks.addRule("Pattern: testGradle<ID>") {
         useJUnit {
             includeCategories("org.jenkinsci.gradle.plugins.jpi.UsesGradleTestKit")
         }
-        onlyIf {
-            gradleVersion.startsWith('4') && System.getProperty("java.specification.version") == "1.8" ||
-                    gradleVersion.startsWith('5')
-        }
     }
 }
 
-setOf("4.10.3", "5.6.4", "6.0.1")
+setOf("6.0.1")
         .map { tasks.named("testGradle$it") }
         .forEach { tasks.check { dependsOn(it) } }
 

@@ -3,6 +3,12 @@
 This is a Gradle plugin for building [Jenkins](http://jenkins-ci.org)
 plugins, written in Groovy or Java.
 
+## Compatibility with Gradle versions
+
+The latest version of the JPI plugin requires **Gradle 6+** to make use of advanced dependency management features.
+
+For Gradle versions 4.x or 5.x, please use version `0.38.0` of the JPI plugin.
+
 ## Configuration
 
 Add the following to your build.gradle:
@@ -93,20 +99,38 @@ repositories are defined in your build.gradle.
 
 ## Dependencies on other Jenkins Plugins
 
-If your plugin depends on other Jenkins plugins you can specify the dependencies in the following way:
+If your plugin depends on other Jenkins plugins, you can use the same _configurations_ as in Gradle's `java-libary` plugin.
+See [the documentation](https://docs.gradle.org/current/userguide/java_library_plugin.html#sec:java_library_separation) for details on the difference of `api` and `implementation` dependencies.
+For _optional dependencies_, you can use Gradle's [feature variants](https://docs.gradle.org/current/userguide/feature_variants.html).
 
+You can define both dependencies to Jenkins plugins and plain Java libraries.
+The JPI plugin will figure out what you are depending on and process it accordingly (Java libraries will be packaged in the your Jenkins plugin's hpi/jpi file).
+
+The additional `jenkinsServer` configuration can be used to install extra plugins for the `server` task (see below).
+
+Examples:
+
+    java {
+        // define features for 'optional dependencies'
+        registerFeature('ant') {
+            usingSourceSet(sourceSets.main)
+        }
+    }
+    
     dependencies {
-        jenkinsPlugins 'org.jenkinsci.plugins:git:1.1.15'
-        optionalJenkinsPlugins 'org.jenkins-ci.plugins:ant:1.2'
-        jenkinsTest 'org.jenkins-ci.main:maven-plugin:1.480'
+        implementation 'org.jenkinsci.plugins:git:1.1.15'
+        api 'org.jenkins-ci.plugins:credentials:1.9.4'
+        
+        // dependency of the (optional) ant feature
+        antImplementation 'org.jenkins-ci.plugins:ant:1.2'
+        
+        // dependency for testing only
+        testImplementation 'org.jenkins-ci.main:maven-plugin:1.480'
+        
+        // addition dependencies for manual tests on the server started with `gradle server`
         jenkinsServer 'org.jenkins-ci.plugins:ant:1.2'
     }
 
-Adding the dependency to the `jenkinsPlugins` configuration will make all classes available during compilation and
-also add the dependency to the manifest of your plugin. To define an optional dependency on a plugin then use
-the `optionalJenkinsPlugins` configuration and to use a plugin only for testing, add a dependency to the `jenkinsTest`
-configuration.
-`jenkinsServer` can be used to install extra plugins for the `server` task (see below)
 
 ## Usage
 

@@ -7,27 +7,18 @@ import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ResolvedArtifact
-import org.gradle.api.artifacts.component.ProjectComponentIdentifier
-import org.gradle.api.file.FileCollection
-import org.gradle.api.tasks.InputFiles
-import org.gradle.api.tasks.Internal
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
 
 class LicenseTask extends DefaultTask {
-    @Internal
-    Set<Configuration> configurations
 
-    @Internal
-    Set<Configuration> providedConfigurations
+    @Classpath
+    Configuration libraryConfiguration
 
     @OutputDirectory
     File outputDirectory
-
-    @InputFiles
-    FileCollection getInputFiles() {
-        project.files(configurations*.incoming.files, providedConfigurations*.incoming.files)
-    }
 
     @TaskAction
     void generateLicenseInfo() {
@@ -82,20 +73,11 @@ class LicenseTask extends DefaultTask {
     }
 
     private Dependency[] collectDependencies() {
-        collectArtifacts().findAll { ResolvedArtifact artifact ->
-            !(artifact.id.componentIdentifier instanceof ProjectComponentIdentifier)
+        libraryConfiguration.resolvedConfiguration.resolvedArtifacts.findAll { ResolvedArtifact artifact ->
+            artifact.id.componentIdentifier instanceof ModuleComponentIdentifier
         }.collect { ResolvedArtifact artifact ->
             ModuleVersionIdentifier id = artifact.moduleVersion.id
             project.dependencies.create("${id.group}:${id.name}:${id.version}@pom")
         }
-    }
-
-    private Set<ResolvedArtifact> collectArtifacts() {
-        Set<ResolvedArtifact> artifacts = []
-
-        configurations.each { artifacts += it.resolvedConfiguration.resolvedArtifacts }
-        providedConfigurations.each { artifacts -= it.resolvedConfiguration.resolvedArtifacts }
-
-        artifacts
     }
 }

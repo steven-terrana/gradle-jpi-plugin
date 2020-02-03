@@ -5,22 +5,15 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.model.ObjectFactory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
-import org.gradle.util.GradleVersion
 
 class GenerateTestHpl extends DefaultTask {
     public static final String TASK_NAME = 'generate-test-hpl'
-
-    private static final GradleVersion GRADLE_5_0 = GradleVersion.version('5.0')
 
     @OutputDirectory
     final DirectoryProperty hplDir
 
     GenerateTestHpl() {
-        if (GradleVersion.current() >= GRADLE_5_0) {
-            this.hplDir = services.get(ObjectFactory).directoryProperty()
-        } else {
-            this.hplDir = newOutputDirectory()
-        }
+        this.hplDir = services.get(ObjectFactory).directoryProperty()
     }
 
     @TaskAction

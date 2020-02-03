@@ -22,7 +22,6 @@ import org.gradle.api.plugins.JavaPluginConvention
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.SourceSet
 import org.gradle.util.ConfigureUtil
-import org.gradle.util.GradleVersion
 
 /**
  * This gets exposed to the project as 'jpi' to offer additional convenience methods.
@@ -32,6 +31,7 @@ import org.gradle.util.GradleVersion
  */
 class JpiExtension {
     final Project project
+    Map<String, String> jenkinsWarCoordinates
 
     JpiExtension(Project project) {
         this.project = project
@@ -163,27 +163,21 @@ class JpiExtension {
 
         if (this.coreVersion) {
             project.dependencies {
-                if (GradleVersion.current() >= GradleVersion.version('4.6')) {
-                    annotationProcessor "org.jenkins-ci.main:jenkins-core:$v"
-                }
-                jenkinsCore(
+                jenkinsWarCoordinates = [group: 'org.jenkins-ci.main', name: 'jenkins-war', version: v]
+                testRuntimeOnly(jenkinsWarCoordinates)
+
+                annotationProcessor "org.jenkins-ci.main:jenkins-core:$v"
+
+                compileOnly(
                         [group: 'org.jenkins-ci.main', name: 'jenkins-core', version: v],
                         [group: findBugsGroup, name: 'annotations', version: findBugsVersion],
                         [group: 'javax.servlet', name: servletApiArtifact, version: servletApiVersion],
                 )
 
-                jenkinsWar(group: 'org.jenkins-ci.main', name: 'jenkins-war', version: v)
-
-                if (new VersionNumber(this.coreVersion) < new VersionNumber('2.64')) {
-                    jenkinsTest("org.jenkins-ci.main:jenkins-war:${v}:war-for-test")
-                } else {
-                    project.configurations.jenkinsTest.extendsFrom(project.configurations.jenkinsWar)
-                }
-
-                jenkinsTest("org.jenkins-ci.main:jenkins-test-harness:${testHarnessVersion}")
-                jenkinsTest("org.jenkins-ci.main:ui-samples-plugin:${uiSamplesVersion}")
+                testImplementation("org.jenkins-ci.main:jenkins-test-harness:${testHarnessVersion}")
+                testImplementation("org.jenkins-ci.main:ui-samples-plugin:${uiSamplesVersion}")
                 if (new VersionNumber(this.coreVersion) < new VersionNumber('1.505')) {
-                    jenkinsTest('junit:junit-dep:4.10')
+                    testImplementation('junit:junit-dep:4.10')
                 }
             }
         }

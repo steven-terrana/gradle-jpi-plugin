@@ -22,10 +22,15 @@ class AddedDependenciesIntegrationSpec extends IntegrationSpec {
     def 'resolves test dependencies'() {
         given:
         build << '''\
+           java {
+                registerFeature('configFile') {
+                    usingSourceSet(sourceSets.main)
+                }
+            }
             dependencies {
-                jenkinsPlugins 'org.jenkins-ci.plugins:structs:1.1@jar'
-                optionalJenkinsPlugins 'org.jenkins-ci.plugins:config-file-provider:2.8.1@jar'
-                jenkinsTest 'org.jenkins-ci.plugins:cloudbees-folder:4.4@jar'
+                implementation 'org.jenkins-ci.plugins:structs:1.1'
+                configFileApi 'org.jenkins-ci.plugins:config-file-provider:2.8.1'
+                testImplementation 'org.jenkins-ci.plugins:cloudbees-folder:4.4'
             }
             '''.stripIndent()
 
@@ -40,7 +45,7 @@ class AddedDependenciesIntegrationSpec extends IntegrationSpec {
         File dir = new File(projectDir.root, 'build/resources/test/test-dependencies')
         dir.directory
         new File(dir, 'index').text == [
-                'structs', 'config-file-provider', 'cloudbees-folder',
+                'config-file-provider', 'structs', 'cloudbees-folder',
                 'token-macro', 'credentials',
         ].join('\n')
         new File(dir, 'structs.hpi').exists()
@@ -63,8 +68,8 @@ class AddedDependenciesIntegrationSpec extends IntegrationSpec {
                 doLast {
                     output.createNewFile()
                     def artifactsByConfiguration = configurations.findAll { it.canBeResolved }.collectEntries { c ->
-                        def artifacts = c.resolvedConfiguration.resolvedArtifacts.collect {
-                            it.moduleVersion.id.toString() + '@' + it.extension.toString()
+                        def artifacts = c.incoming.artifactView { it.lenient(true) }.artifacts.collect {
+                            it.id.componentIdentifier.toString() + '@' + it.file.name.substring(it.file.name.lastIndexOf('.') + 1)
                         }
                         [(c.name): artifacts]
                     }
@@ -75,7 +80,7 @@ class AddedDependenciesIntegrationSpec extends IntegrationSpec {
 
         when:
         gradleRunner()
-                .withArguments('writeAllResolvedDependencies')
+                .withArguments('writeAllResolvedDependencies', '-s')
                 .build()
         def resolutionJson = new File(projectDir.root, 'build/resolved-dependencies.json')
         def resolvedDependencies = new JsonSlurper().parse(resolutionJson)
