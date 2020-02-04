@@ -1,5 +1,12 @@
 ## 0.39.0 (unreleased)
 
+  * use variant-aware dependency management - [PR #132](https://github.com/jenkinsci/gradle-jpi-plugin/pull/132), allowing
+    publication of Gradle Module Metadata
+  * requires Gradle 6.0 or later
+  * remove `jenkinsPlugins` in favor of using `implementation`
+  * remove `optionalJenkinsPlugins` in favor of using [Gradle feature variants](https://docs.gradle.org/6.1.1/userguide/feature_variants.html)
+  * remove `jenkinsTest` in favor of using `testImplementation`
+
 ## 0.38.0 (2020-01-27)
 
   * upgrade dependency `org.jenkins-ci.main:jenkins-test-harness:2.31 -> 2.60` added to projects - [PR #133](https://github.com/jenkinsci/gradle-jpi-plugin/pull/133)
