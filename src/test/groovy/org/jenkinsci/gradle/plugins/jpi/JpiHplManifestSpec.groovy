@@ -15,6 +15,7 @@ class JpiHplManifestSpec extends Specification {
             apply plugin: 'jpi'
         }
         def libraries = [
+                new File(project.rootDir, 'src/main/resources'),
                 new File(project.buildDir, 'classes/java/main'),
                 new File(project.buildDir, 'resources/main'),
         ]
