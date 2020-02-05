@@ -42,6 +42,7 @@ import org.gradle.api.tasks.bundling.War
 import org.gradle.api.tasks.compile.GroovyCompile
 import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
+import org.gradle.language.base.plugins.LifecycleBasePlugin
 import org.gradle.util.GradleVersion
 
 import static org.gradle.api.logging.LogLevel.INFO
@@ -171,7 +172,7 @@ class JpiPlugin implements Plugin<Project> {
         JpiExtension jpiExtension = project.extensions.getByType(JpiExtension)
 
         def jar = project.tasks.named(JavaPlugin.JAR_TASK_NAME)
-        project.tasks.register(JPI_TASK_NAME, War) {
+        def jpi = project.tasks.register(JPI_TASK_NAME, War) {
             it.description = 'Generates the JPI package'
             it.group = BasePlugin.BUILD_GROUP
             def fileName = "${jpiExtension.shortName}.${jpiExtension.fileExtension}"
@@ -180,6 +181,9 @@ class JpiPlugin implements Plugin<Project> {
             it.archiveExtension.set(extension)
             it.classpath(jar, project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.allLibraryDependencies)
             it.from(WEB_APP_DIR)
+        }
+        project.tasks.named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME) {
+            it.dependsOn(jpi)
         }
     }
 
