@@ -13,12 +13,20 @@ class JpiHplManifestSpec extends Specification {
         setup:
         project.with {
             apply plugin: 'jpi'
+            dependencies.with {
+                implementation('org.apache.commons:commons-lang3:3.9')
+            }
+            evaluate() // trigger 'afterEvaluate { }' configurations
         }
         def libraries = [
+                new File(project.rootDir, 'src/main/resources'),
                 new File(project.buildDir, 'classes/java/main'),
                 new File(project.buildDir, 'resources/main'),
         ]
         libraries*.mkdirs()
+        libraries += new File(project.gradle.gradleUserHomeDir,
+                'caches/modules-2/files-2.1/org.apache.commons/commons-lang3/3.9/' +
+                        '122c7cee69b53ed4a7681c03d4ee4c0e2765da5/commons-lang3-3.9.jar')
 
         when:
         Manifest manifest = new JpiHplManifest(project)
