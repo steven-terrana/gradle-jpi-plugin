@@ -68,6 +68,8 @@ class JpiPluginSpec extends Specification {
         publishingExtension.repositories.get(0).name == 'jenkins'
         publishingExtension.repositories.get(0) instanceof MavenArtifactRepository
         (publishingExtension.repositories.get(0) as MavenArtifactRepository).url == URI.create(repositoryUrl)
+        project.tasks.findByName('javadocJar')
+        project.tasks.findByName('sourcesJar')
 
         where:
         projectVersion   | repositoryUrl                           | extension
@@ -105,19 +107,27 @@ class JpiPluginSpec extends Specification {
     }
 
     def 'publishing configuration has been skipped'() {
-        when:
+        setup:
         project.with {
             apply plugin: 'jpi'
             jenkinsPlugin {
                 configurePublishing = false
             }
         }
+
+        when:
         (project as ProjectInternal).evaluate()
+
+        and:
         project.extensions.getByType(PublishingExtension)
 
         then:
         UnknownDomainObjectException ex = thrown()
         ex.message.contains("Extension of type 'PublishingExtension' does not exist.")
+
+        and:
+        !project.tasks.findByName('javadocJar')
+        !project.tasks.findByName('sourcesJar')
     }
 
     def 'localizer task has been setup'(Object outputDir, String expectedOutputDir) {

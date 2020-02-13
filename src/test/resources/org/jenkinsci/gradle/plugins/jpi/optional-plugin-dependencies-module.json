@@ -58,46 +58,6 @@
       ]
     },
     {
-      "name": "sourcesElements",
-      "attributes": {
-        "org.gradle.category": "documentation",
-        "org.gradle.dependency.bundling": "external",
-        "org.gradle.docstype": "sources",
-        "org.gradle.usage": "java-runtime"
-      },
-      "files": [
-        {
-          "name": "test-1.0-sources.jar",
-          "url": "test-1.0-sources.jar",
-          "size": "",
-          "sha512": "",
-          "sha256": "",
-          "sha1": "",
-          "md5": ""
-        }
-      ]
-    },
-    {
-      "name": "javadocElements",
-      "attributes": {
-        "org.gradle.category": "documentation",
-        "org.gradle.dependency.bundling": "external",
-        "org.gradle.docstype": "javadoc",
-        "org.gradle.usage": "java-runtime"
-      },
-      "files": [
-        {
-          "name": "test-1.0-javadoc.jar",
-          "url": "test-1.0-javadoc.jar",
-          "size": "",
-          "sha512": "",
-          "sha256": "",
-          "sha1": "",
-          "md5": ""
-        }
-      ]
-    },
-    {
       "name": "credentialsApiElements",
       "attributes": {
         "org.gradle.category": "library",
@@ -221,6 +181,46 @@
         {
           "name": "test-1.0.hpi",
           "url": "test-1.0.hpi",
+          "size": "",
+          "sha512": "",
+          "sha256": "",
+          "sha1": "",
+          "md5": ""
+        }
+      ]
+    },
+    {
+      "name": "sourcesElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "sources",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "test-1.0-sources.jar",
+          "url": "test-1.0-sources.jar",
+          "size": "",
+          "sha512": "",
+          "sha256": "",
+          "sha1": "",
+          "md5": ""
+        }
+      ]
+    },
+    {
+      "name": "javadocElements",
+      "attributes": {
+        "org.gradle.category": "documentation",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.docstype": "javadoc",
+        "org.gradle.usage": "java-runtime"
+      },
+      "files": [
+        {
+          "name": "test-1.0-javadoc.jar",
+          "url": "test-1.0-javadoc.jar",
           "size": "",
           "sha512": "",
           "sha256": "",

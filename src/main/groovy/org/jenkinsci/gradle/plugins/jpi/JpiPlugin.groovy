@@ -103,10 +103,6 @@ class JpiPlugin implements Plugin<Project> {
         configureLocalizer(gradleProject)
         configureInjectedTest(gradleProject)
 
-        JavaPluginExtension javaPluginExtension = gradleProject.extensions.getByType(JavaPluginExtension)
-        javaPluginExtension.withSourcesJar()
-        javaPluginExtension.withJavadocJar()
-
         if (!gradleProject.logger.isEnabled(INFO)) {
             gradleProject.tasks.withType(JavaCompile).configureEach {
                 options.compilerArgs << '-Asezpoz.quiet=true'
@@ -408,6 +404,10 @@ class JpiPlugin implements Plugin<Project> {
                         }
                     }
                 }
+
+                JavaPluginExtension javaPluginExtension = project.extensions.getByType(JavaPluginExtension)
+                javaPluginExtension.withSourcesJar()
+                javaPluginExtension.withJavadocJar()
             }
         }
 
