@@ -76,6 +76,36 @@
       ]
     },
     {
+      "name": "runtimeElementsJenkins",
+      "attributes": {
+        "org.gradle.category": "library",
+        "org.gradle.dependency.bundling": "external",
+        "org.gradle.jvm.version": 8,
+        "org.gradle.libraryelements": "jpi",
+        "org.gradle.usage": "java-runtime"
+      },
+      "dependencies": [
+        {
+          "group": "org.jenkins-ci.plugins",
+          "module": "credentials",
+          "version": {
+            "requires": "1.9.4"
+          }
+        }
+      ],
+      "files": [
+        {
+          "name": "test-1.0.hpi",
+          "url": "test-1.0.hpi",
+          "size": "",
+          "sha512": "",
+          "sha256": "",
+          "sha1": "",
+          "md5": ""
+        }
+      ]
+    },
+    {
       "name": "sourcesElements",
       "attributes": {
         "org.gradle.category": "documentation",
@@ -107,36 +137,6 @@
         {
           "name": "test-1.0-javadoc.jar",
           "url": "test-1.0-javadoc.jar",
-          "size": "",
-          "sha512": "",
-          "sha256": "",
-          "sha1": "",
-          "md5": ""
-        }
-      ]
-    },
-    {
-      "name": "runtimeElementsJenkins",
-      "attributes": {
-        "org.gradle.category": "library",
-        "org.gradle.dependency.bundling": "external",
-        "org.gradle.jvm.version": 8,
-        "org.gradle.libraryelements": "jpi",
-        "org.gradle.usage": "java-runtime"
-      },
-      "dependencies": [
-        {
-          "group": "org.jenkins-ci.plugins",
-          "module": "credentials",
-          "version": {
-            "requires": "1.9.4"
-          }
-        }
-      ],
-      "files": [
-        {
-          "name": "test-1.0.hpi",
-          "url": "test-1.0.hpi",
           "size": "",
           "sha512": "",
           "sha256": "",
