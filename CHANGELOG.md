@@ -2,10 +2,13 @@
 
   * use variant-aware dependency management - [PR #132](https://github.com/jenkinsci/gradle-jpi-plugin/pull/132), allowing
     publication of Gradle Module Metadata
+  * only configure sources and javadoc variants if `configurePublishing` is `true` - [PR #140](https://github.com/jenkinsci/gradle-jpi-plugin/pull/132),
+    enabling the use of opinionated publishing plugins without duplicate artifacts
   * requires Gradle 6.0 or later
   * remove `jenkinsPlugins` in favor of using `implementation`
   * remove `optionalJenkinsPlugins` in favor of using [Gradle feature variants](https://docs.gradle.org/6.1.1/userguide/feature_variants.html)
   * remove `jenkinsTest` in favor of using `testImplementation`
+  * updated to Gradle 6.2
 
 ## 0.38.0 (2020-01-27)
 
