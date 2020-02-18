@@ -142,7 +142,10 @@ Examples:
   the Jenkins Maven repository to be included in the Update Center.
 * `gradle server` - Start a local instance of Jenkins (http://localhost:8080) with the plugin pre-installed for testing
   and debugging. The HTTP port can be changed with the `jenkins.httpPort` project or system property, e.g.
-  `gradle server -Djenkins.httpPort=8082`.
+  `gradle server -Djenkins.httpPort=8082`. Since the server runs in the Gradle process, [increasing the memory available
+  to Gradle][configure-jvm] also increases the memory available to Jenkins.
+  
+[configure-jvm]: https://docs.gradle.org/current/userguide/build_environment.html#sec:configuring_jvm_memory
 
 ## Gradle 4+
 
