@@ -106,7 +106,7 @@ tasks.addRule("Pattern: testGradle<ID>") {
     }
 }
 
-setOf("6.0.1")
+setOf("6.0.1", "6.1.1")
         .map { tasks.named("testGradle$it") }
         .forEach { tasks.check { dependsOn(it) } }
 
