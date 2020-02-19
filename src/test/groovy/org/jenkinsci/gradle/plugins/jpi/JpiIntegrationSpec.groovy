@@ -333,10 +333,9 @@ class JpiIntegrationSpec extends IntegrationSpec {
 
     def 'handles dependencies coming from ivy repository'() {
         given:
-        File repo = new File(build.parentFile, "ivyrepo/jenkinsci/myclient/1.0")
+        File repo = new File(build.parentFile, 'ivyrepo/jenkinsci/myclient/1.0')
         repo.mkdirs()
-        def ivyXml = new File(repo, "myclient-1.0-ivy.xml")
-        def jar = new File(repo, "myclient-1.0.jar")
+        def ivyXml = new File(repo, 'myclient-1.0-ivy.xml')
         ivyXml.text = '''
 <ivy-module version="2.0">
   <info organisation="jenkinsci" module="myclient" revision="1.0" status="release" publication="20200219224227">
@@ -365,7 +364,6 @@ class JpiIntegrationSpec extends IntegrationSpec {
                 id 'org.jenkins-ci.jpi'
                 id "maven-publish"
             }
-            
             repositories {
                 ivy {
                     name 'EmbeddedIvy'
@@ -385,11 +383,11 @@ class JpiIntegrationSpec extends IntegrationSpec {
 
         when:
         def result = gradleRunner()
-                .withArguments('build')
-                .buildAndFail()
+                .withArguments('build', '-s')
+                .build()
 
         then:
-        result.output.contains('No such property: packaging for class: org.gradle.internal.component.external.model.ivy.DefaultIvyModuleResolveMetadata')
+        !result.output.contains('No such property: packaging for class: org.gradle.internal.component.external.model.ivy.DefaultIvyModuleResolveMetadata')
     }
 
 }

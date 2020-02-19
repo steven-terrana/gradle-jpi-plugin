@@ -5,6 +5,7 @@ import org.gradle.api.artifacts.ComponentMetadataContext
 import org.gradle.api.artifacts.ComponentMetadataRule
 import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.model.ObjectFactory
+import org.gradle.internal.component.external.model.ivy.IvyModuleResolveMetadata
 
 import javax.inject.Inject
 
@@ -17,7 +18,9 @@ abstract class JpiVariantRule implements ComponentMetadataRule {
     @Override
     void execute(ComponentMetadataContext ctx) {
         def id = ctx.details.id
-        if (isJenkinsPackaging(ctx)) {
+        if(isIvyResolvedDependency(ctx)) {
+            addEmptyJpiVariant(ctx)
+        } else if (isJenkinsPackaging(ctx)) {
             ctx.details.withVariant('runtime') {
                 it.attributes {
                     it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, 'jpi'))
@@ -63,6 +66,10 @@ abstract class JpiVariantRule implements ComponentMetadataRule {
             }
         }
         // This variant might still resolve to a jar file - https://github.com/gradle/gradle/issues/11974
+    }
+
+    private boolean isIvyResolvedDependency(ComponentMetadataContext ctx) {
+        return ctx.metadata instanceof IvyModuleResolveMetadata
     }
 
     private boolean isJenkinsPackaging(ComponentMetadataContext ctx) {
