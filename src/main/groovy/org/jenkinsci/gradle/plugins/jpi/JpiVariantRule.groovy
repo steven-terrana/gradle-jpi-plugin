@@ -18,7 +18,7 @@ abstract class JpiVariantRule implements ComponentMetadataRule {
     @Override
     void execute(ComponentMetadataContext ctx) {
         def id = ctx.details.id
-        if(isIvyResolvedDependency(ctx)) {
+        if (isIvyResolvedDependency(ctx)) {
             addEmptyJpiVariant(ctx)
         } else if (isJenkinsPackaging(ctx)) {
             ctx.details.withVariant('runtime') {
@@ -69,7 +69,7 @@ abstract class JpiVariantRule implements ComponentMetadataRule {
     }
 
     private boolean isIvyResolvedDependency(ComponentMetadataContext ctx) {
-        return ctx.metadata instanceof IvyModuleResolveMetadata
+        ctx.metadata instanceof IvyModuleResolveMetadata
     }
 
     private boolean isJenkinsPackaging(ComponentMetadataContext ctx) {
