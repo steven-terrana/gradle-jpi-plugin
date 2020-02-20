@@ -330,4 +330,64 @@ class JpiIntegrationSpec extends IntegrationSpec {
         new File(projectDir.root, "build/testRepo/org/jenkinsci/sample/${projectName}/1.0/${projectName}-1.0-javadoc.jar").exists()
         new File(projectDir.root, "build/testRepo/org/jenkinsci/sample/${projectName}/1.0/${projectName}-1.0-sources.jar").exists()
     }
+
+    def 'handles dependencies coming from ivy repository'() {
+        given:
+        File repo = new File(build.parentFile, 'ivyrepo/jenkinsci/myclient/1.0')
+        repo.mkdirs()
+        def ivyXml = new File(repo, 'myclient-1.0-ivy.xml')
+        ivyXml.text = '''
+<ivy-module version="2.0">
+  <info organisation="jenkinsci" module="myclient" revision="1.0" status="release" publication="20200219224227">
+  </info>
+  <configurations>
+    <conf name="compile" visibility="public"/>
+    <conf name="default" visibility="public" extends="runtime,master"/>
+    <conf name="runtime" visibility="public" extends="compile"/>
+    <conf visibility="public" name="javadoc"/>
+    <conf visibility="public" name="master"/>
+    <conf visibility="public" name="sources"/>
+    <conf visibility="public" extends="runtime" name="test"/>
+    <conf name="optional" visibility="public"/>
+  </configurations>
+  <publications>
+    <artifact name="some-common" type="sources" ext="jar" conf="sources" m:classifier="sources" xmlns:m="http://ant.apache.org/ivy/maven"/>
+    <artifact name="some-common" type="jar" ext="jar" conf="compile"/>
+  </publications>
+  <dependencies>
+  </dependencies>
+</ivy-module>
+'''
+
+        build.text = """
+            plugins {
+                id 'org.jenkins-ci.jpi'
+                id "maven-publish"
+            }
+            repositories {
+                ivy {
+                    name 'EmbeddedIvy'
+                    url "ivyrepo"
+                    layout 'pattern', {
+                        m2compatible = true
+                        ivy '[organisation]/[module]/[revision]/[module]-[revision]-ivy.[ext]'
+                        artifact '[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]'
+                    }
+                }
+            }
+
+            dependencies {
+                implementation 'jenkinsci:myclient:1.0'
+            }
+            """.stripIndent()
+
+        when:
+        def result = gradleRunner()
+                .withArguments('build', '-s')
+                .build()
+
+        then:
+        !result.output.contains('No such property: packaging for class: org.gradle.internal.component.external.model.ivy.DefaultIvyModuleResolveMetadata')
+    }
+
 }
