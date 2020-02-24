@@ -19,7 +19,7 @@ abstract class JpiVariantRule implements ComponentMetadataRule {
     void execute(ComponentMetadataContext ctx) {
         def id = ctx.details.id
         if (isIvyResolvedDependency(ctx)) {
-            addEmptyJpiVariant(ctx)
+            return
         } else if (isJenkinsPackaging(ctx)) {
             ctx.details.withVariant('runtime') {
                 it.attributes {
