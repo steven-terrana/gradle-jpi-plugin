@@ -47,25 +47,7 @@ abstract class JpiVariantRule implements ComponentMetadataRule {
                     it.addFile("${id.name}-${id.version}.jar")
                 }
             }
-        } else if (isJarPackaging(ctx)) {
-            addEmptyJpiVariant(ctx)
         }
-    }
-
-    /**
-     * Add a variant that we can match if a JPI variant depends on something that
-     * does not have a JPI variant. This is the case for all POM-based JPI modules
-     * that declare dependencies to JAR modules, because the metadata does not
-     * have sufficient separation of JAR/JPI variants.
-     */
-    private addEmptyJpiVariant(ComponentMetadataContext ctx) {
-        ctx.details.addVariant('jpiEmpty') {
-            it.attributes {
-                it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE,
-                        objects.named(LibraryElements, JpiPlugin.JPI))
-            }
-        }
-        // This variant might still resolve to a jar file - https://github.com/gradle/gradle/issues/11974
     }
 
     private boolean isIvyResolvedDependency(ComponentMetadataContext ctx) {
@@ -74,12 +56,11 @@ abstract class JpiVariantRule implements ComponentMetadataRule {
 
     private boolean isJenkinsPackaging(ComponentMetadataContext ctx) {
         // TODO we need public API for this - https://github.com/gradle/gradle/issues/11955
-        String packaging = ctx.metadata.packaging
-        packaging == 'jpi' ||  packaging == 'hpi'
-    }
-
-    private boolean isJarPackaging(ComponentMetadataContext ctx) {
-        String packaging = ctx.metadata.packaging
-        packaging == 'jar' || packaging == 'jenkins-module'
+        try {
+            String packaging = ctx.metadata.packaging
+            packaging == 'jpi' || packaging == 'hpi'
+        } catch (all) {
+            return false
+        }
     }
 }

@@ -261,7 +261,10 @@ class JpiPublishingAndConsumptionTest extends IntegrationSpec {
         resolveConsumer('runtime') == [ 'producer-1.0.jar' ] as Set
         resolveConsumer('jenkinsRuntime') == [ 'producer-1.0.hpi' ] as Set
         resolveConsumer('jenkinsTestRuntime') == [
-                'producer-1.0.hpi', 'ui-samples-plugin-2.0.hpi', 'jenkins-war-1.580.1-war-for-test.jar' ] as Set
+                'producer-1.0.hpi', 'ui-samples-plugin-2.0.hpi', 'jenkins-war-1.580.1-war-for-test.jar',
+                'maven-plugin-2.5.hpi', 'ant-1.2.hpi', 'subversion-1.45.hpi', 'mailer-1.10.hpi',
+                'matrix-auth-1.0.2.hpi', 'antisamy-markup-formatter-1.0.hpi', 'matrix-project-1.0-beta-1.hpi',
+                'junit-1.0.hpi', 'javadoc-1.0.hpi'] as Set
     }
 
     private void publishProducer() {
