@@ -331,10 +331,14 @@ class JpiIntegrationSpec extends IntegrationSpec {
         new File(projectDir.root, "build/testRepo/org/jenkinsci/sample/${projectName}/1.0/${projectName}-1.0-sources.jar").exists()
     }
 
-    def 'handles dependencies coming from ivy repository'() {
+    def 'handles dependencies coming from ivy repository and do not fail with variants'() {
         given:
         File repo = new File(build.parentFile, 'ivyrepo/jenkinsci/myclient/1.0')
         repo.mkdirs()
+        def jar = new File(repo, 'myclient-1.0.jar')
+        def originalJar = new File(getClass().getResource('/myclient-1.0.jar').toURI())
+        jar.bytes = originalJar.bytes
+
         def ivyXml = new File(repo, 'myclient-1.0-ivy.xml')
         ivyXml.text = '''
 <ivy-module version="2.0">
@@ -351,8 +355,8 @@ class JpiIntegrationSpec extends IntegrationSpec {
     <conf name="optional" visibility="public"/>
   </configurations>
   <publications>
-    <artifact name="some-common" type="sources" ext="jar" conf="sources" m:classifier="sources" xmlns:m="http://ant.apache.org/ivy/maven"/>
-    <artifact name="some-common" type="jar" ext="jar" conf="compile"/>
+    <artifact name="myclient" type="sources" ext="jar" conf="sources" m:classifier="sources" xmlns:m="http://ant.apache.org/ivy/maven"/>
+    <artifact name="myclient" type="jar" ext="jar" conf="compile"/>
   </publications>
   <dependencies>
   </dependencies>
@@ -363,6 +367,9 @@ class JpiIntegrationSpec extends IntegrationSpec {
             plugins {
                 id 'org.jenkins-ci.jpi'
                 id "maven-publish"
+            }
+            jenkinsPlugin {
+                configurePublishing = false
             }
             repositories {
                 ivy {
@@ -383,11 +390,10 @@ class JpiIntegrationSpec extends IntegrationSpec {
 
         when:
         def result = gradleRunner()
-                .withArguments('build', '-s')
+                .withArguments('build', '-x', 'generateLicenseInfo')
                 .build()
 
         then:
         !result.output.contains('No such property: packaging for class: org.gradle.internal.component.external.model.ivy.DefaultIvyModuleResolveMetadata')
     }
-
 }
