@@ -168,7 +168,7 @@ class JpiPlugin implements Plugin<Project> {
         jarProvider.configure { it.dependsOn(configureManifest) }
     }
 
-    private static configureJpi(Project project) {
+    private configureJpi(Project project) {
         JpiExtension jpiExtension = project.extensions.getByType(JpiExtension)
 
         def jar = project.tasks.named(JavaPlugin.JAR_TASK_NAME)
@@ -179,7 +179,7 @@ class JpiPlugin implements Plugin<Project> {
             def extension = jpiExtension.fileExtension
             it.archiveFileName.set(fileName)
             it.archiveExtension.set(extension)
-            it.classpath(jar, project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.allLibraryDependencies)
+            it.classpath(jar, dependencyAnalysis.allLibraryDependencies)
             it.from(WEB_APP_DIR)
         }
         project.tasks.named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME) {
@@ -217,12 +217,12 @@ class JpiPlugin implements Plugin<Project> {
         }
     }
 
-    private static configureLicenseInfo(Project project) {
+    private configureLicenseInfo(Project project) {
         def licenseTask = project.tasks.register(LICENSE_TASK_NAME, LicenseTask) {
             it.description = 'Generates license information.'
             it.group = BasePlugin.BUILD_GROUP
             it.outputDirectory = new File(project.buildDir, 'licenses')
-            it.libraryConfiguration = project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.allLibraryDependencies
+            it.libraryConfiguration = dependencyAnalysis.allLibraryDependencies
         }
 
         project.tasks.named(JPI_TASK_NAME).configure {
@@ -272,6 +272,7 @@ class JpiPlugin implements Plugin<Project> {
                 project.dependencies.attributesSchema.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE)
         libraryElementsStrategy.compatibilityRules.add(JPILibraryElementsCompatibilityRule)
         libraryElementsStrategy.disambiguationRules.add(JPILibraryDisambiguationRule)
+
 
         project.dependencies.components.all(JpiVariantRule)
         project.dependencies.components.withModule(JenkinsWarRule.JENKINS_WAR_COORDINATES, JenkinsWarRule)
@@ -337,7 +338,7 @@ class JpiPlugin implements Plugin<Project> {
                         }
                     }
 
-                    project.plugins.getPlugin(JpiPlugin).dependencyAnalysis.registerJpiConfigurations(
+                    dependencyAnalysis.registerJpiConfigurations(
                             runtimeElements,
                             runtimeElementsJenkins,
                             runtimeClasspathJenkins)
