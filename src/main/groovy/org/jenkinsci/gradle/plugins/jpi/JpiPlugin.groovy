@@ -267,12 +267,11 @@ class JpiPlugin implements Plugin<Project> {
         }
     }
 
-    private static configureConfigurations(Project project) {
+    private configureConfigurations(Project project) {
         def libraryElementsStrategy =
                 project.dependencies.attributesSchema.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE)
         libraryElementsStrategy.compatibilityRules.add(JPILibraryElementsCompatibilityRule)
         libraryElementsStrategy.disambiguationRules.add(JPILibraryDisambiguationRule)
-
 
         project.dependencies.components.all(JpiVariantRule)
         project.dependencies.components.withModule(JenkinsWarRule.JENKINS_WAR_COORDINATES, JenkinsWarRule)
@@ -367,11 +366,11 @@ class JpiPlugin implements Plugin<Project> {
     private static boolean isRuntimeVariant(Configuration variant) {
         (variant.canBeConsumed
                 && variant.attributes.getAttribute(Usage.USAGE_ATTRIBUTE)?.
-                    name == Usage.JAVA_RUNTIME
+                name == Usage.JAVA_RUNTIME
                 && variant.attributes.getAttribute(Category.CATEGORY_ATTRIBUTE)?.
-                    name == Category.LIBRARY
+                name == Category.LIBRARY
                 && variant.attributes.getAttribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE)?.
-                    name == LibraryElements.JAR)
+                name == LibraryElements.JAR)
     }
 
     private static String toFeatureSpecificConfigurationName(Configuration runtimeElements, String baseName) {
@@ -451,7 +450,6 @@ class JpiPlugin implements Plugin<Project> {
 
     private static class JPILibraryElementsCompatibilityRule implements
             AttributeCompatibilityRule<LibraryElements> {
-
         @Override
         void execute(CompatibilityCheckDetails<LibraryElements> details) {
             if (details.consumerValue.name == JPI && details.producerValue.name == LibraryElements.JAR) {
