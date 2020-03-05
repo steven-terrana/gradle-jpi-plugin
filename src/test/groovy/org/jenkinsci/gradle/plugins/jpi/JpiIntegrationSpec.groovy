@@ -6,6 +6,10 @@ import spock.lang.Unroll
 import java.nio.file.Files
 import java.util.zip.ZipFile
 
+import static org.jenkinsci.gradle.plugins.jpi.UnsupportedGradleConfigurationVerifier.PLUGINS_DEPENDENCY_CONFIGURATION_NAME
+import static org.jenkinsci.gradle.plugins.jpi.UnsupportedGradleConfigurationVerifier.JENKINS_TEST_DEPENDENCY_CONFIGURATION_NAME
+import static org.jenkinsci.gradle.plugins.jpi.UnsupportedGradleConfigurationVerifier.OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME
+
 class JpiIntegrationSpec extends IntegrationSpec {
     private final String projectName = TestDataGenerator.generateName()
     private final String projectVersion = TestDataGenerator.generateVersion()
@@ -395,5 +399,30 @@ class JpiIntegrationSpec extends IntegrationSpec {
 
         then:
         !result.output.contains('No such property: packaging for class: org.gradle.internal.component.external.model.ivy.DefaultIvyModuleResolveMetadata')
+    }
+
+    @Unroll
+    def 'Should fail build with right context message when using #configuration configuration'() {
+        given:
+        build << """
+            repositories { mavenCentral() }
+            dependencies {
+                $configuration 'junit:junit:4.12'
+            }
+            """.stripIndent()
+
+        when:
+        def result = gradleRunner()
+                .withArguments('dependencies')
+                .buildAndFail()
+
+        then:
+        result.output.contains(expectedError)
+
+        where:
+        configuration                                  | expectedError
+        PLUGINS_DEPENDENCY_CONFIGURATION_NAME          | "$PLUGINS_DEPENDENCY_CONFIGURATION_NAME is not supported anymore. Please use implementation configuration"
+        OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME | "$OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME is not supported anymore. Please use Gradle feature variants"
+        JENKINS_TEST_DEPENDENCY_CONFIGURATION_NAME     | "$JENKINS_TEST_DEPENDENCY_CONFIGURATION_NAME is not supported anymore. Please use testImplementation configuration"
     }
 }

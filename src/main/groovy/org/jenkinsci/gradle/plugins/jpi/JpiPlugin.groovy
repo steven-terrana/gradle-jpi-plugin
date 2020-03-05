@@ -85,6 +85,7 @@ class JpiPlugin implements Plugin<Project> {
             throw new GradleException('This version of the JPI plugin requires Gradle 6+.' +
                     'For older Gradle versions, please use version 0.38.0 of the JPI plugin.')
         }
+        UnsupportedGradleConfigurationVerifier.configureDeprecatedConfigurations(gradleProject)
 
         dependencyAnalysis = new DependencyAnalysis(gradleProject)
 
