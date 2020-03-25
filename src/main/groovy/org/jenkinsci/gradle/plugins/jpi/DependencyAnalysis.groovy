@@ -12,6 +12,7 @@ import org.gradle.api.artifacts.result.ResolvedVariantResult
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Category
 import org.gradle.api.attributes.LibraryElements
+import org.gradle.api.attributes.Usage
 
 @CompileStatic
 class DependencyAnalysis {
@@ -42,6 +43,10 @@ class DependencyAnalysis {
 
     DependencyAnalysis(Project project) {
         this.allLibraryDependencies = project.configurations.detachedConfiguration()
+        project.plugins.withId('org.jetbrains.kotlin.jvm') {
+            this.allLibraryDependencies.attributes.attribute(Usage.USAGE_ATTRIBUTE,
+                    project.objects.named(Usage, Usage.JAVA_RUNTIME))
+        }
         this.allLibraryDependencies.withDependencies {
             // do the analysis when this configuration is resolved
             analyse()

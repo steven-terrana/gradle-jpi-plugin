@@ -8,6 +8,7 @@ import org.gradle.api.artifacts.Dependency
 import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.artifacts.ResolvedArtifact
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.attributes.Usage
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
@@ -66,8 +67,12 @@ class LicenseTask extends DefaultTask {
     }
 
     private Set<ResolvedArtifact> collectPomArtifacts() {
-        project.configurations
+        def detached = project.configurations
                 .detachedConfiguration(collectDependencies())
+        project.plugins.withId('org.jetbrains.kotlin.jvm') {
+            detached.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
+        }
+        detached
                 .resolvedConfiguration
                 .resolvedArtifacts
     }

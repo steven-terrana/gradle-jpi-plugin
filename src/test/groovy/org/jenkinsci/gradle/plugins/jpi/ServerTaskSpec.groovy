@@ -16,6 +16,7 @@ class ServerTaskSpec extends IntegrationSpec {
         def build = projectDir.newFile('build.gradle')
         build << """\
             plugins {
+                $additionalPlugin
                 id 'org.jenkins-ci.jpi'
             }
             jenkinsPlugin {
@@ -23,6 +24,7 @@ class ServerTaskSpec extends IntegrationSpec {
             }
             dependencies {
                 jenkinsServer 'org.jenkins-ci.plugins:git:3.12.1'
+                implementation 'com.squareup.okio:okio:2.4.3'
             }
             """.stripIndent()
 
@@ -53,7 +55,10 @@ class ServerTaskSpec extends IntegrationSpec {
         new File(projectDir.root, 'work/plugins/git.hpi').exists()
 
         where:
-        jenkinsVersion << ['1.580.1', '2.64']
+        jenkinsVersion | additionalPlugin
+        '1.580.1'      | ''
+        '2.64'         | ''
+        '2.64'         | "id 'org.jetbrains.kotlin.jvm' version '1.3.70'"
     }
 
     private static String path(File file) {
