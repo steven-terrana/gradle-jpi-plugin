@@ -6,7 +6,7 @@ plugins {
     `maven-publish`
     signing
     codenarc
-    id("com.gradle.plugin-publish") version "0.10.1"
+    id("com.gradle.plugin-publish") version "0.11.0"
     `java-gradle-plugin`
 }
 
