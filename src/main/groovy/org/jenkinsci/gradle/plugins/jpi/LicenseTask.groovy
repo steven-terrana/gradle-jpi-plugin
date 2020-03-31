@@ -69,9 +69,7 @@ class LicenseTask extends DefaultTask {
     private Set<ResolvedArtifact> collectPomArtifacts() {
         def detached = project.configurations
                 .detachedConfiguration(collectDependencies())
-        project.plugins.withId('org.jetbrains.kotlin.jvm') {
-            detached.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
-        }
+        detached.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
         detached
                 .resolvedConfiguration
                 .resolvedArtifacts
