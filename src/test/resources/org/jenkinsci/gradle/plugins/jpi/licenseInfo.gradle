@@ -18,6 +18,14 @@ jenkinsPlugin {
     }
 }
 
+repositories {
+    ivy {
+        name 'EmbeddedIvy'
+        url project.property('embeddedIvyUrl')
+        layout 'maven'
+    }
+}
+
 dependencies {
     // packaged library dependencies -> include license
     api 'xmlunit:xmlunit:1.4'
@@ -25,4 +33,6 @@ dependencies {
     compileOnly 'commons-codec:commons-codec:1.8'
     // plugin dependency -> do not include license
     implementation 'org.jenkins-ci.plugins:credentials:1.9.4'
+    // only available in ivy repository -> do not include due to missing pom
+    implementation 'org.example:myclient:1.0'
 }

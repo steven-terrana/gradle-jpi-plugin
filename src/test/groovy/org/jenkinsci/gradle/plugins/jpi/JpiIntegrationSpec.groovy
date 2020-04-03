@@ -348,7 +348,7 @@ class JpiIntegrationSpec extends IntegrationSpec {
             repositories {
                 ivy {
                     name 'EmbeddedIvy'
-                    url '${System.getProperty('user.dir')}/src/test/repo'
+                    url '${TestSupport.EMBEDDED_IVY_URL}'
                     layout 'maven'
                 }
             }
@@ -360,7 +360,7 @@ class JpiIntegrationSpec extends IntegrationSpec {
 
         when:
         def result = gradleRunner()
-                .withArguments('build', '-x', 'generateLicenseInfo')
+                .withArguments('build')
                 .build()
 
         then:

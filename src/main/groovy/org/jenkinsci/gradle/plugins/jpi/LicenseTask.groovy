@@ -11,9 +11,13 @@ import org.gradle.api.attributes.Usage
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.jenkinsci.gradle.plugins.jpi.internal.DependencyLicenseValidator
 import org.jenkinsci.gradle.plugins.jpi.internal.LicenseDataExtractor
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class LicenseTask extends DefaultTask {
+    private static final Logger LOGGER = LoggerFactory.getLogger(LicenseTask)
 
     @Classpath
     Configuration libraryConfiguration
@@ -69,9 +73,17 @@ class LicenseTask extends DefaultTask {
         def detached = project.configurations
                 .detachedConfiguration(collectDependencies())
         detached.attributes.attribute(Usage.USAGE_ATTRIBUTE, project.objects.named(Usage, Usage.JAVA_RUNTIME))
-        detached
-                .resolvedConfiguration
-                .resolvedArtifacts
+        def lenient = detached.resolvedConfiguration.lenientConfiguration
+        // unresolvedModuleDependencies comes back empty even with a failed pom
+        // so we must do set difference between everything requested and what was resolved
+        def requested = lenient.allModuleDependencies.collect { it.module.toString() }.toSet()
+        def resolved = lenient.artifacts.collect { it.moduleVersion.toString() }.toSet()
+        def destination = outputDirectory.toPath().resolve('licenses.xml')
+        def result = DependencyLicenseValidator.validate(requested, resolved, destination)
+        if (result.isUnresolved()) {
+            LOGGER.warn(result.message)
+        }
+        lenient.artifacts
     }
 
     private Dependency[] collectDependencies() {
