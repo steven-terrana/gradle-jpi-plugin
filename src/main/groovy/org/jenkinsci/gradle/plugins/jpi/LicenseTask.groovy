@@ -1,7 +1,6 @@
 package org.jenkinsci.gradle.plugins.jpi
 
 import groovy.xml.MarkupBuilder
-import groovy.xml.QName
 import org.gradle.api.DefaultTask
 import org.gradle.api.artifacts.Configuration
 import org.gradle.api.artifacts.Dependency
@@ -12,6 +11,7 @@ import org.gradle.api.attributes.Usage
 import org.gradle.api.tasks.Classpath
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import org.jenkinsci.gradle.plugins.jpi.internal.LicenseDataExtractor
 
 class LicenseTask extends DefaultTask {
 
@@ -25,6 +25,7 @@ class LicenseTask extends DefaultTask {
     void generateLicenseInfo() {
         JpiExtension jpiExtension = project.extensions.getByType(JpiExtension)
         Set<ResolvedArtifact> pomArtifacts = collectPomArtifacts()
+        LicenseDataExtractor extractor = new LicenseDataExtractor()
 
         new File(outputDirectory, 'licenses.xml').withWriter { Writer writer ->
             MarkupBuilder xmlMarkup = new MarkupBuilder(writer)
@@ -43,22 +44,20 @@ class LicenseTask extends DefaultTask {
                 }
 
                 pomArtifacts.each { ResolvedArtifact pomArtifact ->
-                    Node pom = new XmlParser().parse(pomArtifact.file)
+                    pomArtifact.file.withReader { reader ->
+                        def data = extractor.extractFrom(reader)
+                        ModuleVersionIdentifier gav = pomArtifact.moduleVersion.id
+                        String name = data.name
+                        String description = data.description
+                        String url = data.url
 
-                    ModuleVersionIdentifier gav = pomArtifact.moduleVersion.id
-                    String name = pom[QName.valueOf('name')].text()
-                    String description = pom[QName.valueOf('description')].text()
-                    String url = pom[QName.valueOf('url')].text()
-                    NodeList licenses = pom[QName.valueOf('licenses')]
-
-                    'l:dependency'(
-                            version: gav.version, artifactId: gav.name, groupId: gav.group, name: name, url: url,
-                    ) {
-                        'l:description'(description)
-                        licenses[QName.valueOf('license')].each { Node license ->
-                            String licenseUrl = license[QName.valueOf('url')].text()
-                            String licenseName = license[QName.valueOf('name')].text()
-                            'l:license'(url: licenseUrl, name: licenseName)
+                        'l:dependency'(
+                                version: gav.version, artifactId: gav.name, groupId: gav.group, name: name, url: url,
+                        ) {
+                            'l:description'(description)
+                            data.licenses.each { license ->
+                                'l:license'(url: license.url, name: license.name)
+                            }
                         }
                     }
                 }
