@@ -16,7 +16,7 @@ class LicenseTaskSpec extends IntegrationSpec {
         when:
         def result = gradleRunner()
                 .withProjectDir(projectFolder)
-                .withArguments('generateLicenseInfo')
+                .withArguments('generateLicenseInfo', "-PembeddedIvyUrl=${TestSupport.EMBEDDED_IVY_URL}")
                 .build()
 
         then:

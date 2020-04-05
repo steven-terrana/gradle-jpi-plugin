@@ -337,36 +337,6 @@ class JpiIntegrationSpec extends IntegrationSpec {
 
     def 'handles dependencies coming from ivy repository and do not fail with variants'() {
         given:
-        File repo = new File(build.parentFile, 'ivyrepo/jenkinsci/myclient/1.0')
-        repo.mkdirs()
-        def jar = new File(repo, 'myclient-1.0.jar')
-        def originalJar = new File(getClass().getResource('/myclient-1.0.jar').toURI())
-        jar.bytes = originalJar.bytes
-
-        def ivyXml = new File(repo, 'myclient-1.0-ivy.xml')
-        ivyXml.text = '''
-<ivy-module version="2.0">
-  <info organisation="jenkinsci" module="myclient" revision="1.0" status="release" publication="20200219224227">
-  </info>
-  <configurations>
-    <conf name="compile" visibility="public"/>
-    <conf name="default" visibility="public" extends="runtime,master"/>
-    <conf name="runtime" visibility="public" extends="compile"/>
-    <conf visibility="public" name="javadoc"/>
-    <conf visibility="public" name="master"/>
-    <conf visibility="public" name="sources"/>
-    <conf visibility="public" extends="runtime" name="test"/>
-    <conf name="optional" visibility="public"/>
-  </configurations>
-  <publications>
-    <artifact name="myclient" type="sources" ext="jar" conf="sources" m:classifier="sources" xmlns:m="http://ant.apache.org/ivy/maven"/>
-    <artifact name="myclient" type="jar" ext="jar" conf="compile"/>
-  </publications>
-  <dependencies>
-  </dependencies>
-</ivy-module>
-'''
-
         build.text = """
             plugins {
                 id 'org.jenkins-ci.jpi'
@@ -378,23 +348,19 @@ class JpiIntegrationSpec extends IntegrationSpec {
             repositories {
                 ivy {
                     name 'EmbeddedIvy'
-                    url "ivyrepo"
-                    layout 'pattern', {
-                        m2compatible = true
-                        ivy '[organisation]/[module]/[revision]/[module]-[revision]-ivy.[ext]'
-                        artifact '[organisation]/[module]/[revision]/[artifact]-[revision](-[classifier]).[ext]'
-                    }
+                    url '${TestSupport.EMBEDDED_IVY_URL}'
+                    layout 'maven'
                 }
             }
 
             dependencies {
-                implementation 'jenkinsci:myclient:1.0'
+                implementation 'org.example:myclient:1.0'
             }
             """.stripIndent()
 
         when:
         def result = gradleRunner()
-                .withArguments('build', '-x', 'generateLicenseInfo')
+                .withArguments('build')
                 .build()
 
         then:
