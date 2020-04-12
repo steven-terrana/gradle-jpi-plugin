@@ -3,6 +3,7 @@ package org.jenkinsci.gradle.plugins.jpi
 import org.gradle.api.artifacts.CacheableRule
 import org.gradle.api.artifacts.ComponentMetadataContext
 import org.gradle.api.artifacts.ComponentMetadataRule
+import org.gradle.api.artifacts.ModuleVersionIdentifier
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.attributes.Bundling
 import org.gradle.api.attributes.Category
@@ -10,11 +11,14 @@ import org.gradle.api.attributes.LibraryElements
 import org.gradle.api.attributes.Usage
 import org.gradle.api.model.ObjectFactory
 import org.gradle.internal.component.external.model.ivy.IvyModuleResolveMetadata
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 import javax.inject.Inject
 
 @CacheableRule
 abstract class JpiVariantRule implements ComponentMetadataRule {
+    private static final Logger LOGGER = LoggerFactory.getLogger(JpiVariantRule)
 
     public static final Attribute EMPTY_VARIANT = Attribute.of('empty-jpi', Boolean)
 
@@ -28,12 +32,18 @@ abstract class JpiVariantRule implements ComponentMetadataRule {
     void execute(ComponentMetadataContext ctx) {
         def id = ctx.details.id
         if (id.module.toString() == JenkinsWarRule.JENKINS_WAR_COORDINATES) {
-            // do not apply this generic rule to the Jenkins WAR
+            skip(id, 'only resolved standalone')
+            return
+        }
+        if (isMissingMetadata(ctx)) {
+            skip(id, 'missing metadata')
             return
         }
         if (isIvyResolvedDependency(ctx)) {
+            skip(id, 'ivy metadata')
             return
-        } else if (isJenkinsPackaging(ctx)) {
+        }
+        if (isJenkinsPackaging(ctx)) {
             ctx.details.withVariant('runtime') {
                 it.attributes {
                     it.attribute(LibraryElements.LIBRARY_ELEMENTS_ATTRIBUTE, objects.named(LibraryElements, 'jpi'))
@@ -92,6 +102,10 @@ abstract class JpiVariantRule implements ComponentMetadataRule {
         // This variant might still resolve to a jar file - https://github.com/gradle/gradle/issues/11974
     }
 
+    private boolean isMissingMetadata(ComponentMetadataContext ctx) {
+        ctx.metadata == null
+    }
+
     private boolean isIvyResolvedDependency(ComponentMetadataContext ctx) {
         ctx.metadata instanceof IvyModuleResolveMetadata
     }
@@ -107,5 +121,9 @@ abstract class JpiVariantRule implements ComponentMetadataRule {
         ctx.metadata.variants.any {
             it.attributes.getAttribute(DESUGARED_LIBRARY_ELEMENTS_ATTRIBUTE) == JpiPlugin.JPI
         }
+    }
+
+    private static void skip(ModuleVersionIdentifier id, String reason) {
+        LOGGER.debug('Skipping {} due to {}', id, reason)
     }
 }
