@@ -1,4 +1,7 @@
-## 0.39.0 (unreleased)
+## 0.40.0 (unreleased)
+
+
+## 0.39.0 (2020-04-15)
 
   * use variant-aware dependency management - [PR #132](https://github.com/jenkinsci/gradle-jpi-plugin/pull/132), allowing
     publication of Gradle Module Metadata
@@ -8,7 +11,7 @@
   * remove `jenkinsPlugins` in favor of using `implementation`
   * remove `optionalJenkinsPlugins` in favor of using [Gradle feature variants](https://docs.gradle.org/6.1.1/userguide/feature_variants.html)
   * remove `jenkinsTest` in favor of using `testImplementation`
-  * updated to Gradle 6.2
+  * updated to Gradle 6.3
 
 ## 0.38.0 (2020-01-27)
 
