@@ -147,6 +147,10 @@ Examples:
   
 [configure-jvm]: https://docs.gradle.org/current/userguide/build_environment.html#sec:configuring_jvm_memory
 
+## Disabling encryption when releasing a plugin
+
+When performing a release via `gradle publish`, gradle will automatically tried to upload artifacts with SHA 256 and 512 encryption. This is not currently supported in the public artifact repository for Jenkins.  To disable this, you can pass a command line argument `gradle publish -Dorg.gradle.internal.publish.checksums.insecure` or include a `gradle.properties` file with the line `org.gradle.internal.publish.checksums.insecure=true`. 
+
 ## Gradle 4+
 
 Note that Gradle 4.0 changed the default layout of the classes folders. Where Gradle 3.x put all classes of groovy and java code into a single directory, Gradle 4 by default creates separate directories for all languages. Unfortunately, this breaks the way
