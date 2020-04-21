@@ -147,9 +147,19 @@ Examples:
   
 [configure-jvm]: https://docs.gradle.org/current/userguide/build_environment.html#sec:configuring_jvm_memory
 
-## Disabling encryption when releasing a plugin
+## Disabling SHA256 and SHA512 checksums when releasing a plugin
 
-When performing a release via `gradle publish`, gradle will automatically tried to upload artifacts with SHA 256 and 512 encryption. This is not currently supported in the public artifact repository for Jenkins.  To disable this, you can pass a command line argument `gradle publish -Dorg.gradle.internal.publish.checksums.insecure` or include a `gradle.properties` file with the line `org.gradle.internal.publish.checksums.insecure=true`. 
+This section applies to the warning:
+
+```
+Cannot upload checksum for module-maven-metadata.xml. Remote repository doesn't support sha-256. Error: Could not PUT 'https://repo.jenkins-ci.org/releases/org/jenkins-ci/plugins/<shortname>/maven-metadata.xml.sha256'. Received status code 403 from server: Forbidden
+Cannot upload checksum for module-maven-metadata.xml. Remote repository doesn't support sha-512. Error: Could not PUT 'https://repo.jenkins-ci.org/releases/org/jenkins-ci/plugins/<shortname>/maven-metadata.xml.sha512'. Received status code 403 from server: Forbidden
+```
+
+When performing a release via `gradle publish`, gradle will automatically try to upload artifacts with SHA 256 and 512 checksums. This is not currently supported in the public artifact repository for Jenkins.  To disable this, you can pass [a command line argument][shasum] `gradle publish -Dorg.gradle.internal.publish.checksums.insecure` or include a `gradle.properties` file with the line `org.gradle.internal.publish.checksums.insecure=true`.
+
+
+[shasum]: https://docs.gradle.org/6.0.1/release-notes.html#publication-of-sha256-and-sha512-checksums
 
 ## Gradle 4+
 
