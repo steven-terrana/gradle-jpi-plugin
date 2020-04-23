@@ -174,6 +174,7 @@ class JpiIntegrationSpec extends IntegrationSpec {
         'testClasses'                                | ':generate-test-hpl'                          | TaskOutcome.SUCCESS
         'compileJava'                                | ':localizer'                                  | TaskOutcome.SUCCESS
         'generateMetadataFileForMavenJpiPublication' | ':generateMetadataFileForMavenJpiPublication' | TaskOutcome.SUCCESS
+        'check'                                      | ':checkAccessModifier'                        | TaskOutcome.SUCCESS
     }
 
     @Unroll

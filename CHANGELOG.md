@@ -1,5 +1,7 @@
 ## 0.40.0 (unreleased)
 
+ * introduce `checkAccessModifier` task as a dependency of `check`
+ * support `-PcheckAccessModifier.useBeta=true` to opt into beta APIs
 
 ## 0.39.0 (2020-04-15)
 

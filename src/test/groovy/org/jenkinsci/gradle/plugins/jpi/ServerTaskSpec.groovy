@@ -13,6 +13,10 @@ class ServerTaskSpec extends IntegrationSpec {
             rootProject.name = "test-project"
             includeBuild('${path(new File(''))}')
         """
+        def port = 0
+        new ServerSocket(0).withCloseable {
+            port = it.localPort
+        }
         def build = projectDir.newFile('build.gradle')
         build << """\
             plugins {
@@ -35,7 +39,7 @@ class ServerTaskSpec extends IntegrationSpec {
             while (response != 200) {
                 Thread.sleep(1000)
                 try {
-                    def shutdown = new URL('http://localhost:8456/safeExit').openConnection()
+                    def shutdown = new URL("http://localhost:${port}/safeExit").openConnection()
                     shutdown.requestMethod = 'POST'
                     response = shutdown.responseCode
                 } catch (ConnectException e) {
@@ -45,7 +49,7 @@ class ServerTaskSpec extends IntegrationSpec {
         }
 
         // run a separate process because the Jenkins shutdown kills the daemon
-        def gradleProcess = "${path(new File('gradlew'))} server -Djenkins.httpPort=8456 --no-daemon".
+        def gradleProcess = "${path(new File('gradlew'))} server -Djenkins.httpPort=${port} --no-daemon -i".
                 execute(null, projectDir.root)
         def output = gradleProcess.text
 

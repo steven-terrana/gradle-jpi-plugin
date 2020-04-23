@@ -13,6 +13,9 @@ plugins {
 repositories {
     // using JCenter for dependency resolution is recommended, see https://plugins.gradle.org/docs/publish-plugin
     jcenter()
+    maven {
+        url = uri("https://repo.jenkins-ci.org/releases")
+    }
 }
 
 java {
@@ -22,6 +25,10 @@ java {
 
 val sezpoz = "net.java.sezpoz:sezpoz:1.13"
 
+configurations.all {
+    exclude("org.jenkins-ci", "annotation-indexer")
+}
+
 dependencies {
     annotationProcessor(sezpoz)
     implementation(gradleApi())
@@ -29,12 +36,14 @@ dependencies {
     implementation("org.jenkins-ci:version-number:1.1")
     implementation(sezpoz)
     implementation(localGroovy())
+    implementation("org.kohsuke:access-modifier-checker:1.16")
     testAnnotationProcessor(sezpoz)
     testImplementation("org.spockframework:spock-core:1.3-groovy-2.5") {
         exclude(module = "groovy-all") // use the version that is distributed with Gradle
     }
     testImplementation("org.xmlunit:xmlunit-core:2.6.3")
     testImplementation("org.apache.commons:commons-text:1.8")
+    testImplementation("com.squareup:javapoet:1.12.1")
 }
 
 publishing {

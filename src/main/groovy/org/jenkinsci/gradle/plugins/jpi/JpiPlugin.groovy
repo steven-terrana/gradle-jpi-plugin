@@ -48,6 +48,7 @@ import org.gradle.api.tasks.compile.JavaCompile
 import org.gradle.api.tasks.testing.Test
 import org.gradle.language.base.plugins.LifecycleBasePlugin
 import org.gradle.util.GradleVersion
+import org.jenkinsci.gradle.plugins.jpi.restricted.CheckAccessModifierTask
 
 import static org.gradle.api.logging.LogLevel.INFO
 import static org.gradle.api.tasks.SourceSet.MAIN_SOURCE_SET_NAME
@@ -129,6 +130,13 @@ class JpiPlugin implements Plugin<Project> {
         configureTestDependencies(gradleProject)
         configurePublishing(gradleProject)
         configureTestHpl(gradleProject)
+
+        def camName = CheckAccessModifierTask.TASK_NAME
+        def cam = gradleProject.tasks.register(camName, CheckAccessModifierTask) { CheckAccessModifierTask t ->
+            t.configuration = gradleProject.configurations.compileClasspath
+            t.dependsOn('classes')
+        }
+        gradleProject.tasks.findByName('check')?.dependsOn(cam)
     }
 
     private static Properties loadDotJenkinsOrg() {
