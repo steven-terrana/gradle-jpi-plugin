@@ -3,6 +3,12 @@
    <configuration>
       <verify-metadata>true</verify-metadata>
       <verify-signatures>false</verify-signatures>
+      <trusted-artifacts>
+         <trust file=".*-javadoc[.]jar" regex="true"/>
+         <trust file=".*-sources[.]jar" regex="true"/>
+         <trust group="org.gradle.groovy" name="groovy-all"/>
+         <trust file="gradle-[^-]+-src.zip" regex="true"/>
+      </trusted-artifacts>
    </configuration>
    <components>
       <component group="classworlds" name="classworlds" version="1.1-alpha-2">
