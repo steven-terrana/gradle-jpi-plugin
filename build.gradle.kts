@@ -8,6 +8,7 @@ plugins {
     codenarc
     id("com.gradle.plugin-publish") version "0.11.0"
     `java-gradle-plugin`
+    id("com.github.sghill.distribution-sha") version "0.4.0"
 }
 
 repositories {
@@ -106,7 +107,7 @@ tasks.addRule("Pattern: testGradle<ID>") {
     }
 }
 
-setOf("6.0.1", "6.1.1", "6.2.2")
+setOf("6.0.1", "6.1.1", "6.2.2", "6.3")
         .map { tasks.named("testGradle$it") }
         .forEach { tasks.check { dependsOn(it) } }
 
