@@ -5,7 +5,7 @@ name: Regression
 
 on:
   schedule:
-    - cron '0 0 * * 0' # weekly
+    - cron: "37 7 * * 0" # weekly
 
 jobs:
   build:
