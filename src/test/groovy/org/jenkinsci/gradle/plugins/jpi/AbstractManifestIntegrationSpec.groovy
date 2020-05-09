@@ -17,7 +17,7 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
 
     abstract String taskToRun()
 
-    abstract String generatedFileName()
+    abstract String generatedFileName(String base = "${projectName}-${projectVersion}")
 
     def setup() {
         settings = projectDir.newFile('settings.gradle')
@@ -58,7 +58,7 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
             '''.stripIndent()
 
         when:
-        def actual = generateManifestThroughGradle()
+        def actual = generateManifestThroughGradle(projectVersion, 'hello')
 
         then:
         actual['Long-Name'] == 'hello'
@@ -75,7 +75,7 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
             '''.stripIndent()
 
         when:
-        def actual = generateManifestThroughGradle()
+        def actual = generateManifestThroughGradle(projectVersion, 'hello')
 
         then:
         actual['Long-Name'] == 'The Hello Plugin'
@@ -486,9 +486,10 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
     }
 
     @CompileStatic
-    Map<String, String> generateManifestThroughGradle(String overrideVersion = projectVersion) {
+    Map<String, String> generateManifestThroughGradle(String overrideVersion = projectVersion,
+                                                      String overrideFileName = null) {
         runTask(overrideVersion)
-        String fileName = generatedFileName()
+        String fileName = overrideFileName ? generatedFileName(overrideFileName) : generatedFileName()
         if (overrideVersion != projectVersion) {
             if (overrideVersion == null) {
                 fileName = fileName.replace('-' + projectVersion, '')

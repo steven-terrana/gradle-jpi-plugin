@@ -1,13 +1,10 @@
 package org.jenkinsci.gradle.plugins.jpi
 
-import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import spock.lang.Specification
 
 class JpiExtensionSpec extends Specification {
-    Project project = Mock(Project)
-
     def 'work directory defaults to work if not set'() {
         when:
         Project project = ProjectBuilder.builder().build()

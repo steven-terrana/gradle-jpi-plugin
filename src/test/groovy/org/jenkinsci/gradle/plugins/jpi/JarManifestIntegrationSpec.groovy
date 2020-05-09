@@ -8,7 +8,7 @@ class JarManifestIntegrationSpec extends AbstractManifestIntegrationSpec {
     }
 
     @Override
-    String generatedFileName() {
-        "${projectName}-${projectVersion}.jar"
+    String generatedFileName(String base = projectName) {
+        "${base}-${projectVersion}.jar"
     }
 }

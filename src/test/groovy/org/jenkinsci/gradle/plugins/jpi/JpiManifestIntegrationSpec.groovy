@@ -7,7 +7,7 @@ class JpiManifestIntegrationSpec extends AbstractManifestIntegrationSpec {
     }
 
     @Override
-    String generatedFileName() {
-        "${projectName}.hpi"
+    String generatedFileName(String base = projectName) {
+        "${base}.hpi"
     }
 }

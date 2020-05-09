@@ -129,6 +129,9 @@ class JpiPlugin implements Plugin<Project> {
         configureTestDependencies(gradleProject)
         configurePublishing(gradleProject)
         configureTestHpl(gradleProject)
+        gradleProject.afterEvaluate {
+            gradleProject.setProperty('archivesBaseName', ext.shortName)
+        }
     }
 
     private static Properties loadDotJenkinsOrg() {
