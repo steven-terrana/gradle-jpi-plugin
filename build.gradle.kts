@@ -107,10 +107,6 @@ tasks.addRule("Pattern: testGradle<ID>") {
     }
 }
 
-setOf("6.0.1", "6.1.1", "6.2.2", "6.3")
-        .map { tasks.named("testGradle$it") }
-        .forEach { tasks.check { dependsOn(it) } }
-
 tasks.withType<Test>().configureEach {
     testLogging {
         exceptionFormat = FULL
