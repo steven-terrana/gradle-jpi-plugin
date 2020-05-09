@@ -3,8 +3,6 @@ package org.jenkinsci.gradle.plugins.jpi
 import groovy.transform.CompileStatic
 import org.gradle.testkit.runner.BuildResult
 import org.gradle.testkit.runner.TaskOutcome
-import org.gradle.util.GradleVersion
-import spock.lang.Requires
 import spock.lang.Unroll
 
 import java.util.jar.JarInputStream
@@ -347,7 +345,6 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
                 'ant:1.2'
     }
 
-    @Requires({ IntegrationSpec.gradleVersionForTest >= GradleVersion.version('5.3') })
     def 'can use bom to manage plugin dependencies'() {
         given:
         build << """\
