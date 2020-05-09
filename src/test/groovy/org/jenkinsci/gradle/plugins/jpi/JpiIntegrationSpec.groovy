@@ -6,9 +6,9 @@ import spock.lang.Unroll
 import java.nio.file.Files
 import java.util.zip.ZipFile
 
-import static org.jenkinsci.gradle.plugins.jpi.UnsupportedGradleConfigurationVerifier.PLUGINS_DEPENDENCY_CONFIGURATION_NAME
 import static org.jenkinsci.gradle.plugins.jpi.UnsupportedGradleConfigurationVerifier.JENKINS_TEST_DEPENDENCY_CONFIGURATION_NAME
 import static org.jenkinsci.gradle.plugins.jpi.UnsupportedGradleConfigurationVerifier.OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME
+import static org.jenkinsci.gradle.plugins.jpi.UnsupportedGradleConfigurationVerifier.PLUGINS_DEPENDENCY_CONFIGURATION_NAME
 
 class JpiIntegrationSpec extends IntegrationSpec {
     private final String projectName = TestDataGenerator.generateName()
@@ -56,6 +56,8 @@ class JpiIntegrationSpec extends IntegrationSpec {
 
         where:
         declaration             | expected
+        'fileExtension = null'  | 'hpi'
+        'fileExtension = ""'    | 'hpi'
         'fileExtension = "hpi"' | 'hpi'
         'fileExtension "hpi"'   | 'hpi'
         'fileExtension = "jpi"' | 'jpi'
@@ -390,5 +392,148 @@ class JpiIntegrationSpec extends IntegrationSpec {
         PLUGINS_DEPENDENCY_CONFIGURATION_NAME          | "$PLUGINS_DEPENDENCY_CONFIGURATION_NAME is not supported anymore. Please use implementation configuration"
         OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME | "$OPTIONAL_PLUGINS_DEPENDENCY_CONFIGURATION_NAME is not supported anymore. Please use Gradle feature variants"
         JENKINS_TEST_DEPENDENCY_CONFIGURATION_NAME     | "$JENKINS_TEST_DEPENDENCY_CONFIGURATION_NAME is not supported anymore. Please use testImplementation configuration"
+    }
+
+    @Unroll
+    def 'should fail if < 1.420 (#version)'(String version) {
+        given:
+        build << """\
+            jenkinsPlugin {
+                coreVersion = '$version'
+            }
+            """.stripIndent()
+
+        when:
+        def result = gradleRunner()
+                .withArguments('build')
+                .buildAndFail()
+
+        then:
+        result.output.contains('> The gradle-jpi-plugin requires Jenkins 1.420 or later')
+
+        where:
+        version << ['1.419.99', '1.390']
+    }
+
+    @Unroll
+    def 'setup publishing repo by extension (#url)'(String url, String expected) {
+        given:
+        build << """\
+            jenkinsPlugin {
+                coreVersion = '2.222.3'
+                repoUrl = $url
+            }
+
+            tasks.register('repos') {
+                doLast {
+                    publishing.repositories.each {
+                        println it.url
+                    }
+                }
+            }
+            """.stripIndent()
+
+        when:
+        def result = gradleRunner()
+                .withArguments('repos', '-q')
+                .build()
+
+        then:
+        result.output.contains(expected)
+
+        where:
+        url                            | expected
+        null                           | 'https://repo.jenkins-ci.org/releases'
+        "''"                           | 'https://repo.jenkins-ci.org/releases'
+        "'https://maven.example.org/'" | 'https://maven.example.org/'
+    }
+
+    def 'setup publishing repo by system property'() {
+        given:
+        build << """\
+            jenkinsPlugin {
+                coreVersion = '2.222.3'
+                repoUrl = 'https://maven.example.org/'
+            }
+
+            tasks.register('repos') {
+                doLast {
+                    publishing.repositories.each {
+                        println it.url
+                    }
+                }
+            }
+            """.stripIndent()
+        def expected = 'https://acme.org/'
+
+        when:
+        def result = gradleRunner()
+                .withArguments('repos', '-q', "-Djpi.repoUrl=${expected}")
+                .build()
+
+        then:
+        result.output.contains(expected)
+    }
+
+    @Unroll
+    def 'setup publishing snapshot repo by extension (#url)'(String url, String expected) {
+        given:
+        build << """\
+            jenkinsPlugin {
+                coreVersion = '2.222.3'
+                snapshotRepoUrl = $url
+            }
+            version = '0.40.0-SNAPSHOT'
+
+            tasks.register('repos') {
+                doLast {
+                    publishing.repositories.each {
+                        println it.url
+                    }
+                }
+            }
+            """.stripIndent()
+
+        when:
+        def result = gradleRunner()
+                .withArguments('repos', '-q')
+                .build()
+
+        then:
+        result.output.contains(expected)
+
+        where:
+        url                            | expected
+        null                           | 'https://repo.jenkins-ci.org/snapshots'
+        "''"                           | 'https://repo.jenkins-ci.org/snapshots'
+        "'https://maven.example.org/'" | 'https://maven.example.org/'
+    }
+
+    def 'setup publishing snapshot repo by system property'() {
+        given:
+        build << """\
+            jenkinsPlugin {
+                coreVersion = '2.222.3'
+                repoUrl = 'https://maven.example.org/'
+            }
+            version = '0.40.0-SNAPSHOT'
+
+            tasks.register('repos') {
+                doLast {
+                    publishing.repositories.each {
+                        println it.url
+                    }
+                }
+            }
+            """.stripIndent()
+        def expected = 'https://acme.org/'
+
+        when:
+        def result = gradleRunner()
+                .withArguments('repos', '-q', "-Djpi.snapshotRepoUrl=${expected}")
+                .build()
+
+        then:
+        result.output.contains(expected)
     }
 }

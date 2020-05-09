@@ -1,12 +1,21 @@
 package org.jenkinsci.gradle.plugins.jpi
 
 import org.gradle.testkit.runner.TaskOutcome
+import spock.lang.Unroll
 
 class JpiLocalizerTaskIntegrationSpec extends IntegrationSpec {
 
-    def 'single-module project should be able to run LocalizerTask'() {
+    @Unroll
+    def 'single-module project should be able to run LocalizerTask (#dir)'(String dir, String expected) {
         given:
-        projectDir.newFile('build.gradle') << "plugins { id 'org.jenkins-ci.jpi' }"
+        projectDir.newFile('build.gradle') << """\
+            plugins {
+                id 'org.jenkins-ci.jpi'
+            }
+            jenkinsPlugin {
+                localizerOutputDir = $dir
+            }
+            """.stripIndent()
         projectDir.newFolder('src', 'main', 'resources')
         projectDir.newFile('src/main/resources/Messages.properties') << 'key1=value1\nkey2=value2'
 
@@ -17,10 +26,16 @@ class JpiLocalizerTaskIntegrationSpec extends IntegrationSpec {
 
         then:
         result.task(':localizer').outcome == TaskOutcome.SUCCESS
-        def generatedJavaFile = new File(projectDir.root, 'build/generated-src/localizer/Messages.java')
+        def generatedJavaFile = new File(projectDir.root, "$expected/Messages.java")
         generatedJavaFile.exists()
         generatedJavaFile.text.contains('public static String key1()')
         generatedJavaFile.text.contains('public static String key2()')
+
+        where:
+        dir     | expected
+        null    | 'build/generated-src/localizer'
+        "''"    | 'build/generated-src/localizer'
+        "'foo'" | 'foo'
     }
 
     def 'multi-module project should be able to run LocalizerTask'() {

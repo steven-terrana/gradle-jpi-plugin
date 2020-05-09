@@ -16,6 +16,7 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
     protected File build
 
     abstract String taskToRun()
+
     abstract String generatedFileName()
 
     def setup() {
@@ -45,6 +46,39 @@ abstract class AbstractManifestIntegrationSpec extends IntegrationSpec {
 
         then:
         actual == expected
+    }
+
+    def 'should populate Long-Name from Short-Name if unset'() {
+        given:
+        build << '''
+            jenkinsPlugin {
+                coreVersion = '2.222.3'
+                shortName = 'hello'
+            }
+            '''.stripIndent()
+
+        when:
+        def actual = generateManifestThroughGradle()
+
+        then:
+        actual['Long-Name'] == 'hello'
+    }
+
+    def 'should populate Long-Name'() {
+        given:
+        build << '''
+            jenkinsPlugin {
+                coreVersion = '2.222.3'
+                shortName = 'hello'
+                displayName = 'The Hello Plugin'
+            }
+            '''.stripIndent()
+
+        when:
+        def actual = generateManifestThroughGradle()
+
+        then:
+        actual['Long-Name'] == 'The Hello Plugin'
     }
 
     def 'should populate Plugin-Version from project version if not defined'() {
